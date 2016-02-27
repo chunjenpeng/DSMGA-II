@@ -1,0 +1,10 @@
+
+1.Start with dsmga2.cpp:461 findClique
+
+=======================================================================
+
+2016-02-27
+
+1. Setup local, Github repositories: master(origianl DSMGA2) & 2-edges branche
+
+=======================================================================
