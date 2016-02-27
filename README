@@ -1,0 +1,7 @@
+==============================================
+Copyright 2015 Tian-Li Yu and Shih-Huan Hsu
+
+This is a C++ implementation of DSMGA-II. Feel free to use, modify or distribute the code for academic purposes with an appropriate acknowledgment of the source, but in all resulting publications please include the following citation:
+
+S.-H. Hsu and T.-L. Yu, Optimization by pairwise linkage detection, incremental linkage set, and restricted/back mixing: DSMGA-II, Genetic and Evolutionary Computation Conference (GECCO 2015).
+==============================================
