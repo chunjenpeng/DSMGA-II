@@ -1,8 +1,30 @@
 =======================================================================
 
+2016-02-29
+
+TODO: 1. trimatrix.h:89 T*** matrix (i, j, edge)
+      2. modify trimatrix.h for T*** matrix
+	  3. find where to print ILS
+	  4. compare ILS before and after 2-edge graph modification
+
+=======================================================================
+
 2016-02-28
 
 1.Start with dsmga2.cpp:461 findClique
+
+2.In dsmga2.cpp:425 buildGraph:
+	origianl linkage = computeMI(p00, p01, p10, p11);
+	     add linkage0 = computeMI(p00, 0.0, 0.0, p11);
+	         linkage1 = computeMI(p00, 0.0, 0.0, p11);
+			 doesn't seemed to be better...
+			 why linkage0 + linkage1 > linkage ?
+			 shouldn't MI be linkage0 + linkage1 == linkage?
+
+   Problem: What is the Meaning of MI in 2-edges graph?
+
+3. Found that sweep is already included... =_="
+	    
 
 =======================================================================
 

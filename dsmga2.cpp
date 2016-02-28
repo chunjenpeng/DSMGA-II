@@ -447,8 +447,25 @@ void DSMGA2::buildGraph() {
             double p11 = (double)n11/(double)nCurrent;
 
             double linkage;
-            linkage = computeMI(p00,p01,p10,p11);
+			linkage = computeMI(p00,p01,p10,p11);
             graph.write(i,j,linkage);
+            
+		    //2016-02-28	
+			/*
+			cout << "\n i = " << i << " j = " << j << endl;
+			cout << "computeMI(p00,p11) = " << computeMI(p00, 0.0, 0.0, p11) << endl;
+            cout << "computeMI(p10,p10) = " << computeMI(0.0, p01, p10, 0.0) << endl;
+            cout << "           linkage = " << linkage << endl; 
+
+			double linkage0 = computeMI(p00, 0.0, 0.0, p11);
+			double linkage1 = computeMI(0.0, p01, p10, 0.0);
+			if(linkage0 < linkage1)// or linkage0 > linkage1?
+				graph.write(i,j,linkage0);
+			else
+				graph.write(i,j,linkage1);
+            //graph.write(i, j, linkage0, 0);
+			//graph.write(i, j, linkage1, 1);
+			*/
         }
     }
 
