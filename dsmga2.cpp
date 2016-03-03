@@ -14,7 +14,8 @@
 #include "fastcounting.h"
 #include "statistics.h"
 
-
+//2016-03-03
+#include <iomanip>
 using namespace std;
 
 
@@ -306,8 +307,14 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         size_t size = 1;
         Chromosome trial(ell);
         trial = ch;
+	    
+		//2016-03-03
+	    vector<int> takenMask;
 
         for (list<int>::iterator it = mask.begin(); it != mask.end(); ++it) {
+            
+            //2016-03-03
+			takenMask.push_back(*it);
 
             trial.flip(*it);
 
@@ -318,7 +325,25 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         if (isInP(trial)) continue;
 
 
-        if (trial.getFitness() >= ch.getFitness()) {
+        if (trial.getFitness() >= ch.getFitness()) { // QUESTION: Why >= instead of > 
+        //if (trial.getFitness() > ch.getFitness()) { 
+            //2016-03-03
+			cout << "RM Fitness improve: " << setw(4) << trial.getFitness()-ch.getFitness();
+	        vector<int>::iterator it = takenMask.begin();
+			cout << "  Taken Mask: [" << *it;
+			it++;
+			for(;it != takenMask.end(); it++)
+				cout << "-" << *it;
+			cout << "]" << endl;
+            cout << "trial : ";
+			for(int i = 0; i < trial.getLength(); i++)
+				cout << trial.getVal(i);
+			cout << endl << "ch    : ";
+			for(int i = 0; i < ch.getLength(); i++)
+				cout << ch.getVal(i);
+            cout << endl << endl; 
+            ////////////
+
             pHash.erase(ch.getKey());
             pHash[trial.getKey()] = trial.getFitness();
 
