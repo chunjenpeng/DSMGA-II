@@ -1,11 +1,14 @@
 =======================================================================
 
-2016-02-29
+2016-03-01
 
 TODO: 1. trimatrix.h:89 T*** matrix (i, j, edge)
       2. modify trimatrix.h for T*** matrix
 	  3. find where to print ILS
 	  4. compare ILS before and after 2-edge graph modification
+
+1. Print graph in DSMGA2::mixing()
+2. Print takenMask in DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask)
 
 =======================================================================
 
