@@ -1,10 +1,36 @@
 =======================================================================
 
+2016-03-04
+
+TODO: 1.Confirm how to compute MI
+      2.What to do with 2 edges? add restrictions in RM s.t. only take if satisfy posOrNegLinkage?    
+
+
+=======================================================================
+
+2016-03-03
+
+1. print improved fitenss after RM, takenMask during RM and trial, ch
+2. MI(p00, p11) = computeMI(p01+p10, p00, p11, 0.0)
+   MI(p01, p10) = computeMI(p00+p11, p01, p10, 0.0)
+
+   I thought MI(p00, p11) + MI(p01, p10) = MI(p00, p01, p10, p11)
+   but it didn't work with ./sweep 10 1 2...
+   Need to confirm how to compute MI
+
+3. Tried to modify trimatrix.h by adding bool** edge
+                                         write(i, j, linkage, bool posOrNegLinkage)
+										   {update edge[i-1][j] = posOrNegLinkage;}
+   but end up with segmentation fault...
+   Need a better plan to record posOrNegLinkage and also How to use it
+
+=======================================================================
+
 2016-03-01
 
 TODO: 1. trimatrix.h:89 T*** matrix (i, j, edge)
       2. modify trimatrix.h for T*** matrix
-	  3. find where to print ILS
+	  3. (Solved: takenMask in RM)find where to print ILS
 	  4. compare ILS before and after 2-edge graph modification
 
 1. Print graph in DSMGA2::mixing()
