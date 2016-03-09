@@ -274,6 +274,7 @@ void DSMGA2::findMask(Chromosome& ch, list<int>& result){
 	}
 
     //print mask
+    #ifdef DEBUG
 	cout << endl << "Print mask after DSMGA2::findMask" << endl;
 	list<int>::iterator it = result.begin();
 	cout << "[" << *it; 
@@ -281,6 +282,7 @@ void DSMGA2::findMask(Chromosome& ch, list<int>& result){
 	for(; it != result.end(); it++)
 		cout << "-(" << connection[*it] << ")-" << *it;
 	cout << "]" << endl;
+    #endif
     /////////////
 	delete []connection;
 		
@@ -395,6 +397,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         if (trial.getFitness() >= ch.getFitness()) { // QUESTION: Why >= instead of > 
         //if (trial.getFitness() > ch.getFitness()) { 
             //2016-03-03
+			#ifdef DEBUG
 			cout << "RM Fitness improve: " << setw(4) << trial.getFitness()-ch.getFitness();
 	        vector<int>::iterator it = takenMask.begin();
 			cout << "  Taken Mask: [" << *it;
@@ -409,7 +412,8 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
 			for(int i = 0; i < ch.getLength(); i++)
 				cout << ch.getVal(i);
             cout << endl << endl; 
-            ////////////
+            #endif
+			////////////
 
             pHash.erase(ch.getKey());
             pHash[trial.getKey()] = trial.getFitness();
@@ -544,7 +548,7 @@ void DSMGA2::buildGraph() {
             //graph.write(i,j,linkage);
             
 		    //2016-02-28	
-			
+		    #ifdef DEBUG	
 			cout << "\n i = " << i << " j = " << j << endl;
 			//cout << "computeMI(p00,p11) = " << computeMI(p00, 0.0, 0.0, p11) << endl;
             //cout << "computeMI(p10,p10) = " << computeMI(0.0, p01, p10, 0.0) << endl;
@@ -553,7 +557,7 @@ void DSMGA2::buildGraph() {
             cout << "linkage   = " << linkage << endl; 
             cout << "linkage00 = " << linkage00 << endl; 
             cout << "linkage01 = " << linkage01 << endl; 
-            
+            #endif
 			pair<double, double> p(linkage00, linkage01);
 			graph.write(i, j, p);
 			
