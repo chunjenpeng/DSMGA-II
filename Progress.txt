@@ -1,10 +1,41 @@
 =======================================================================
 
+2016-03-09
+1. modify trimatrix.h 
+	T** matrix <p00p11linkage, p01p10linkage>
+
+2. replace DSMGA2::findClique with DSMGA2::findMask
+
+3. DSMGA2::findMask is used to find mask right before RM
+   	it checks if two adjacent nodes are 00,11 or 01,10 
+	before choosing the linkage00 or linkage01 to use to build the graph
+	However... something is not right in the code
+	Need verification...
+
+=======================================================================
 2016-03-04
 
-TODO: 1.Confirm how to compute MI
-      2.What to do with 2 edges? add restrictions in RM s.t. only take if satisfy posOrNegLinkage?    
+1. T** matrix <p00p11linkage, p01p10linkage>
+2. How to compute MI?
+3. LCS, GP(GECCO GP track), Grammer!
+4. OM fundemental Theory(Supply vs. (average) Dimension of Node(e.g. NK d = 2))
+  	  step-by-step: tree graph, cyclic graph, cyclic graph with edges
+	  volumn-surface ratio?
 
+
+TODO: 1.Confirm how to compute MI
+      
+	  (V)2.What to do with 2 edges? add restrictions in RM s.t. only take if satisfy posOrNegLinkage?    
+           (build 2-edges graph first, then check for pos or neg edge while RM to decide which mask to take)
+	  (V)3.How to implement? 
+	  	 3.1 T*** matrix
+		    (Better with T**<posEdge, negEdge>)
+
+		 3.2 save p00, p11 with positive linkage value
+		         p01, p10 with negative linkage value
+			findClique(int startNode, list<int>& masks[i]) with abs(linkage)
+			save list<int>& result as negative node number for p01, p10
+            (Not how prof was imagining...)
 
 =======================================================================
 

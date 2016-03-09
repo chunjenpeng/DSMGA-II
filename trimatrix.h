@@ -23,16 +23,18 @@ public:
         if (n == size) {
             for (int i = 0; i < size - 1; i++)
                 for (int j = 0; j <= i; j++)
-                    matrix[i][j] = T(0.0);
+                    matrix[i][j] = pair<double, double>(0.0, 0.0);
+                    //matrix[i][j] = T(0.0);
         } else {
             release();
             size = n;
-            matrix = new T*[size - 1];
+            matrix = new pair<double, double>*[size - 1];
             for (int i = 0; i < size - 1; i++)
-                matrix[i] = new T[i + 1];
+                matrix[i] = new pair<double, double>[i + 1];
             for (int i = 0; i < size - 1; i++)
                 for (int j = 0; j <= i; j++)
-                    matrix[i][j] = T(0.0);
+                    matrix[i][j] = pair<double, double>(0.0, 0.0);
+                    //matrix[i][j] = T(0.0);
         }
     }
     void release() {
@@ -47,7 +49,7 @@ public:
     ~TriMatrix() {
         release();
     }
-
+/*
     void dec(int i, int j, int step=1) {
         if (i==j) return;
         if (i < j)
@@ -60,9 +62,10 @@ public:
         if (i==j) return;
         dec(i, j, -step);
     }
+*/
 
-
-    void write(int i, int j, T val) {
+    //void write(int i, int j, T val) {
+    void write(int i, int j, pair<double,double> val) {
         assert(i < size && j < size);
         if (i == j) return;
         if (i < j) {
@@ -73,9 +76,11 @@ public:
         matrix[i - 1][j] = val;
     }
 
-    T operator()(int i, int j) const {
+    //T operator()(int i, int j) const {
+    pair<T,T> operator()(int i, int j) const {
         if (i == j)
-            return T(1.0);
+            return pair<double, double>(1.0, 1.0);
+            //return T(1.0);
         assert(i < size && j < size);
         if (i < j) {
             int temp = i;
@@ -86,8 +91,9 @@ public:
     }
 
 private:
-    T** matrix;
-    int size;
+    pair<double, double>** matrix;
+    //T** matrix;
+	int size;
 
 };
 #endif

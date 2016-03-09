@@ -221,12 +221,79 @@ int DSMGA2::countXOR(int x, int y) const {
     return n;
 }
 
+//2016-03-09
+// Almost identical to DSMGA2::findClique
+// except check 00 or 01 before adding connection
+void DSMGA2::findMask(Chromosome& ch, list<int>& result){
+    result.clear();
+    int startNode = myRand.uniformInt(0, ell-1);
+    
+	DLLA rest(ell);
+	genOrderELL();
+	for( int i = 0; i < ell; i++){
+		if(orderELL[i] == startNode)
+			result.push_back(orderELL[i]);
+		else
+			rest.insert(orderELL[i]);
+	}
+
+	double *connection = new double[ell];
+
+	for(DLLA::iterator iter = rest.begin(); iter != rest.end(); iter++){
+	    pair<double, double> p = graph(startNode, *iter);
+		int i = ch.getVal(startNode);
+		int j = ch.getVal(*iter);
+		if(i == j)//p00 or p11
+			connection[*iter] = p.first;
+		else      //p01 or p10
+			connection[*iter] = p.second;
+	}
+
+    while(!rest.isEmpty()){
+	    double max = -INF;
+		int index = -1;
+		for(DLLA::iterator iter = rest.begin(); iter != rest.end(); iter++){
+		    if(max < connection[*iter]){
+			    max = connection[*iter];
+				index = *iter;
+			}
+		}
+
+		rest.erase(index);
+		result.push_back(index);
+
+		for(DLLA::iterator iter = rest.begin(); iter != rest.end(); iter++){
+			pair<double, double> p = graph(index, *iter);
+			int i = ch.getVal(index);
+			int j = ch.getVal(*iter);
+			if(i == j)//p00 or p11
+				connection[*iter] += p.first;
+			else      //p01 or p10
+				connection[*iter] += p.second;
+		}
+	}
+
+    //print mask
+	cout << endl << "Print mask after DSMGA2::findMask" << endl;
+	list<int>::iterator it = result.begin();
+	cout << "[" << *it; 
+    it++;
+	for(; it != result.end(); it++)
+		cout << "-(" << connection[*it] << ")-" << *it;
+	cout << "]" << endl;
+    /////////////
+	delete []connection;
+		
+}
 
 void DSMGA2::restrictedMixing(Chromosome& ch) {
 
-    int r = myRand.uniformInt(0, ell-1);
+    //int r = myRand.uniformInt(0, ell-1);
 
-    list<int> mask = masks[r];
+    //2016-03-09
+	list<int> mask;
+	findMask(ch, mask);
+    //list<int> mask = masks[r];
 
     size_t size = findSize(ch, mask);
     if (size > (size_t)ell/2)
@@ -415,8 +482,8 @@ void DSMGA2::mixing() {
     buildFastCounting();
     buildGraph();
 
-    for (int i=0; i<ell; ++i)
-        findClique(i, masks[i]);
+    //for (int i=0; i<ell; ++i)
+    //    findClique(i, masks[i]);
 
     int repeat = (ell>50)? ell/50: 1;
 
@@ -471,19 +538,26 @@ void DSMGA2::buildGraph() {
             double p10 = (double)n10/(double)nCurrent;
             double p11 = (double)n11/(double)nCurrent;
 
-            double linkage;
-			linkage = computeMI(p00,p01,p10,p11);
-            graph.write(i,j,linkage);
+            double linkage = computeMI(p00,p01,p10,p11);
+			double linkage00 = computeMI(p01+p10, p11, p00, 0.0);
+			double linkage01 = computeMI(p00+p11, p10, p01, 0.0);
+            //graph.write(i,j,linkage);
             
 		    //2016-02-28	
 			
 			cout << "\n i = " << i << " j = " << j << endl;
 			//cout << "computeMI(p00,p11) = " << computeMI(p00, 0.0, 0.0, p11) << endl;
             //cout << "computeMI(p10,p10) = " << computeMI(0.0, p01, p10, 0.0) << endl;
-			cout << "computeMI(p00,p11) = " << computeMI(p01+p10, p11, p00, 0.0) << endl;
-            cout << "computeMI(p10,p10) = " << computeMI(p00+p11, p10, p01, 0.0) << endl;
-            cout << "           linkage = " << linkage << endl; 
-            //cout << "         linkage00 = " << 
+			//cout << "computeMI(p00,p11) = " << computeMI(p01+p10, p11, p00, 0.0) << endl;
+            //cout << "computeMI(p10,p10) = " << computeMI(p00+p11, p10, p01, 0.0) << endl;
+            cout << "linkage   = " << linkage << endl; 
+            cout << "linkage00 = " << linkage00 << endl; 
+            cout << "linkage01 = " << linkage01 << endl; 
+            
+			pair<double, double> p(linkage00, linkage01);
+			graph.write(i, j, p);
+			
+			//cout << "         linkage00 = " << 
 			//cout << "         linkage01 = " << 
 			//double linkage0 = computeMI(p00, 0.0, 0.0, p11);
 			//double linkage1 = computeMI(0.0, p01, p10, 0.0);
@@ -504,7 +578,7 @@ void DSMGA2::buildGraph() {
 
 // from 1 to ell, pick by max edge
 void DSMGA2::findClique(int startNode, list<int>& result) {
-
+/*
 
     result.clear();
 
@@ -542,7 +616,7 @@ void DSMGA2::findClique(int startNode, list<int>& result) {
 
 
     delete []connection;
-
+*/
 }
 
 double DSMGA2::computeMI(double a00, double a01, double a10, double a11) const {
