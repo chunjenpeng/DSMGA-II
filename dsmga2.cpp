@@ -16,6 +16,8 @@
 
 //2016-03-03
 #include <iomanip>
+#define DEBUG
+
 using namespace std;
 
 
@@ -95,6 +97,8 @@ int DSMGA2::doIt (bool output) {
 
     while (!shouldTerminate ()) {
         oneRun (output);
+        int i = 0;
+        cin >> i;
     }
     return generation;
 }
@@ -539,20 +543,22 @@ void DSMGA2::buildGraph() {
             double p11 = (double)n11/(double)nCurrent;
 
             double linkage = computeMI(p00,p01,p10,p11);
-			double linkage00 = computeMI(p01+p10, p11, p00, 0.0);
-			double linkage01 = computeMI(p00+p11, p10, p01, 0.0);
+	    double linkage00 = computeMI(p01+p10, p11, p00, 0.0);
+	    double linkage01 = computeMI(p00+p11, p10, p01, 0.0);
             //graph.write(i,j,linkage);
             
 		    //2016-02-28	
-			
-			cout << "\n i = " << i << " j = " << j << endl;
+			cout << "(i = " << i << ", j = " << j << ") " 
+                             << "linkage = " << left << setw(12) << linkage 
+                             << ", linkage00 = " << left << setw(12) << linkage00
+                             << ", linkage01 = " << left << setw(12) << linkage01 << endl;
 			//cout << "computeMI(p00,p11) = " << computeMI(p00, 0.0, 0.0, p11) << endl;
             //cout << "computeMI(p10,p10) = " << computeMI(0.0, p01, p10, 0.0) << endl;
 			//cout << "computeMI(p00,p11) = " << computeMI(p01+p10, p11, p00, 0.0) << endl;
             //cout << "computeMI(p10,p10) = " << computeMI(p00+p11, p10, p01, 0.0) << endl;
-            cout << "linkage   = " << linkage << endl; 
-            cout << "linkage00 = " << linkage00 << endl; 
-            cout << "linkage01 = " << linkage01 << endl; 
+            //cout << "linkage   = " << linkage << endl; 
+            //cout << "linkage00 = " << linkage00 << endl; 
+            //cout << "linkage01 = " << linkage01 << endl; 
             
 			pair<double, double> p(linkage00, linkage01);
 			graph.write(i, j, p);
