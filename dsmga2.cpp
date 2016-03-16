@@ -401,7 +401,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         if (trial.getFitness() >= ch.getFitness()) { // QUESTION: Why >= instead of > 
         //if (trial.getFitness() > ch.getFitness()) { 
             //2016-03-03
-                        #ifdef DEBUG
+			#ifdef DEBUG
 			cout << "RM Fitness improve: " << setw(4) << trial.getFitness()-ch.getFitness();
 	        vector<int>::iterator it = takenMask.begin();
 			cout << "  Taken Mask: [" << *it;
@@ -416,8 +416,8 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
 			for(int i = 0; i < ch.getLength(); i++)
 				cout << ch.getVal(i);
             cout << endl << endl; 
-                        #endif
-            ////////////
+            #endif
+			////////////
 
             pHash.erase(ch.getKey());
             pHash[trial.getKey()] = trial.getFitness();
