@@ -16,7 +16,7 @@
 
 //2016-03-03
 #include <iomanip>
-#define DEBUG
+//#define DEBUG
 
 using namespace std;
 
@@ -97,8 +97,8 @@ int DSMGA2::doIt (bool output) {
 
     while (!shouldTerminate ()) {
         oneRun (output);
-        int i = 0;
-        cin >> i;
+        //int i = 0;
+        //cin >> i;
     }
     return generation;
 }
@@ -278,6 +278,7 @@ void DSMGA2::findMask(Chromosome& ch, list<int>& result){
 	}
 
     //print mask
+        #ifdef DEBUG
 	cout << endl << "Print mask after DSMGA2::findMask" << endl;
 	list<int>::iterator it = result.begin();
 	cout << "[" << *it; 
@@ -285,6 +286,7 @@ void DSMGA2::findMask(Chromosome& ch, list<int>& result){
 	for(; it != result.end(); it++)
 		cout << "-(" << connection[*it] << ")-" << *it;
 	cout << "]" << endl;
+	#endif
     /////////////
 	delete []connection;
 		
@@ -399,6 +401,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         if (trial.getFitness() >= ch.getFitness()) { // QUESTION: Why >= instead of > 
         //if (trial.getFitness() > ch.getFitness()) { 
             //2016-03-03
+                        #ifdef DEBUG
 			cout << "RM Fitness improve: " << setw(4) << trial.getFitness()-ch.getFitness();
 	        vector<int>::iterator it = takenMask.begin();
 			cout << "  Taken Mask: [" << *it;
@@ -413,6 +416,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
 			for(int i = 0; i < ch.getLength(); i++)
 				cout << ch.getVal(i);
             cout << endl << endl; 
+                        #endif
             ////////////
 
             pHash.erase(ch.getKey());
@@ -547,7 +551,8 @@ void DSMGA2::buildGraph() {
 	    double linkage01 = computeMI(p00+p11, p10, p01, 0.0);
             //graph.write(i,j,linkage);
             
-		    //2016-02-28	
+		    //2016-02-28
+                        #ifdef DEBUG	
 			cout << "(i = " << i << ", j = " << j << ") " 
                              << "linkage = " << left << setw(12) << linkage 
                              << ", linkage00 = " << left << setw(12) << linkage00
@@ -559,7 +564,8 @@ void DSMGA2::buildGraph() {
             //cout << "linkage   = " << linkage << endl; 
             //cout << "linkage00 = " << linkage00 << endl; 
             //cout << "linkage01 = " << linkage01 << endl; 
-            
+                        #endif
+
 			pair<double, double> p(linkage00, linkage01);
 			graph.write(i, j, p);
 			
