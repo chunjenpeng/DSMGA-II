@@ -1,3 +1,6 @@
+2016-03-17
+
+write script run-nk, run-spin, run-sat that can qsub parallel jobs
 
 =======================================================================
 
