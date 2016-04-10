@@ -18,8 +18,6 @@ using namespace std;
 
 int
 main (int argc, char *argv[]) {
-     cout << "argc = " << argc << endl;
-
     if (argc != 9) {
         printf ("DSMGA2 ell nInitial function maxGen maxFe repeat display rand_seed\n");
         printf ("function: \n");

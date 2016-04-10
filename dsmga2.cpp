@@ -97,8 +97,7 @@ int DSMGA2::doIt (bool output) {
 
     while (!shouldTerminate ()) {
         oneRun (output);
-        //int i = 0;
-        //cin >> i;
+        cin.get();
     }
     return generation;
 }
@@ -278,15 +277,15 @@ void DSMGA2::findMask(Chromosome& ch, list<int>& result){
 	}
 
     //print mask
-        #ifdef DEBUG
-	cout << endl << "Print mask after DSMGA2::findMask" << endl;
-	list<int>::iterator it = result.begin();
-	cout << "[" << *it; 
-    it++;
-	for(; it != result.end(); it++)
-		cout << "-(" << connection[*it] << ")-" << *it;
-	cout << "]" << endl;
-	#endif
+//  #ifdef DEBUG
+//	cout << endl << "Print mask after DSMGA2::findMask" << endl;
+//	list<int>::iterator it = result.begin();
+//	cout << "[" << *it; 
+//    it++;
+//	for(; it != result.end(); it++)
+//		cout << "-(" << connection[*it] << ")-" << *it;
+//	cout << "]" << endl;
+//	#endif
     /////////////
 	delete []connection;
 		
@@ -409,12 +408,13 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
 			for(;it != takenMask.end(); it++)
 				cout << "-" << *it;
 			cout << "]" << endl;
-            cout << "trial : ";
-			for(int i = 0; i < trial.getLength(); i++)
-				cout << trial.getVal(i);
-			cout << endl << "ch    : ";
+			cout << "before : ";
 			for(int i = 0; i < ch.getLength(); i++)
 				cout << ch.getVal(i);
+            cout << endl;
+            cout << "after  : ";
+			for(int i = 0; i < trial.getLength(); i++)
+				cout << trial.getVal(i);
             cout << endl << endl; 
             #endif
 			////////////
@@ -545,14 +545,52 @@ void DSMGA2::buildGraph() {
             double p01 = (double)n01/(double)nCurrent;
             double p10 = (double)n10/(double)nCurrent;
             double p11 = (double)n11/(double)nCurrent;
+            double p1_ = p10 + p11;
+            double p0_ = p00 + p01;
+            double p_0 = p00 + p10;
+            double p_1 = p01 + p11;
 
             double linkage = computeMI(p00,p01,p10,p11);
-	    double linkage00 = computeMI(p01+p10, p11, p00, 0.0);
-	    double linkage01 = computeMI(p00+p11, p10, p01, 0.0);
-            //graph.write(i,j,linkage);
+            
+            //2016-04-08_computeMI_entropy
+            double linkage00 = 0.0, linkage01 = 0.0;
+            if (p00 > EPSILON)
+                linkage00 += p00*log(p00/p_0/p0_);
+            if (p11 > EPSILON)
+                linkage00 += p11*log(p11/p_1/p1_);
+            if (p01 > EPSILON)
+                linkage01 += p01*log(p01/p0_/p_1);
+            if (p10 > EPSILON)
+                linkage01 += p10*log(p10/p1_/p_0);
+            //linkage00 = p11*log(p11/p_1/p1_) + p00*log(p00/p_0/p0_);
+            //linkage01 = p01*log(p01/p_1/p0_) + p10*log(p10/p1_/p_0);
+
+/*
+            //2016-03-30_computeMI_entropy
+            double linkage00 = 0.0, linkage01 = 0.0;
+            if(p00 == 0)
+                linkage00 += -p00*log(p00);
+            if(p11 == 0)
+                linkage00 += -p11*log(p11);
+            if(p01 == 0)
+                linkage01 += -p01*log(p01);
+            if(p10 == 0)
+                linkage01 += -p10*log(p10);
+//            linkage00 = (p00 == 0) ? -p00*log(p00): 0.0;
+//            linkage00 = (p11 == 0) ? -p11*log(p11): 0.0;
+//            linkage01 = (p01 == 0) ? -p01*log(p01): 0.0;
+//            linkage01 = (p10 == 0) ? -p10*log(p10): 0.0;
+*/            
+            //2016-03-30_computeMI_entropy_?
+            //double linkage00 = -p00*log(p00)-p11*log(p11)+(p00+p11)*log(p00+p11);
+            //double linkage01 = -p01*log(p01)-p10*log(p10)+(p01+p10)*log(p01+p10);
+            
+            //2016-03-18_computeMI_p01p10_p00p11
+            //double linkage00 = computeMI(p01+p10, p11, p00, 0.0);
+            //double linkage01 = computeMI(p00+p11, p10, p01, 0.0);
             
 		    //2016-02-28
-                        #ifdef DEBUG	
+            #ifdef DEBUG	
 			cout << "(i = " << i << ", j = " << j << ") " 
                              << "linkage = " << left << setw(12) << linkage 
                              << ", linkage00 = " << left << setw(12) << linkage00
@@ -564,8 +602,9 @@ void DSMGA2::buildGraph() {
             //cout << "linkage   = " << linkage << endl; 
             //cout << "linkage00 = " << linkage00 << endl; 
             //cout << "linkage01 = " << linkage01 << endl; 
-                        #endif
+            #endif
 
+            //graph.write(i,j,linkage);
 			pair<double, double> p(linkage00, linkage01);
 			graph.write(i, j, p);
 			
