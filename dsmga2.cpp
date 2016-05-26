@@ -16,7 +16,7 @@
 
 //2016-03-03
 #include <iomanip>
-//#define DEBUG
+#define DEBUG
 
 using namespace std;
 
@@ -590,7 +590,7 @@ void DSMGA2::buildGraph() {
             //double linkage01 = computeMI(p00+p11, p10, p01, 0.0);
             
 		    //2016-02-28
-            #ifdef DEBUG	
+            #ifdef DEBUG1	
 			cout << "(i = " << i << ", j = " << j << ") " 
                              << "linkage = " << left << setw(12) << linkage 
                              << ", linkage00 = " << left << setw(12) << linkage00
