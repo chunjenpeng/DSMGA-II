@@ -97,7 +97,9 @@ int DSMGA2::doIt (bool output) {
 
     while (!shouldTerminate ()) {
         oneRun (output);
+        #ifdef DEBUG
         cin.get();
+        #endif
     }
     return generation;
 }
@@ -233,7 +235,8 @@ void DSMGA2::findMask(Chromosome& ch, list<int>& result){
     
 	DLLA rest(ell);
 	genOrderELL();
-	for( int i = 0; i < ell; i++){
+	//for( int i = 0; i < ell; i++){
+	for( int i = 0; i < 5; i++){ // 2016-10-17
 		if(orderELL[i] == startNode)
 			result.push_back(orderELL[i]);
 		else
@@ -277,15 +280,15 @@ void DSMGA2::findMask(Chromosome& ch, list<int>& result){
 	}
 
     //print mask
-//  #ifdef DEBUG
-//	cout << endl << "Print mask after DSMGA2::findMask" << endl;
-//	list<int>::iterator it = result.begin();
-//	cout << "[" << *it; 
-//    it++;
-//	for(; it != result.end(); it++)
-//		cout << "-(" << connection[*it] << ")-" << *it;
-//	cout << "]" << endl;
-//	#endif
+    #ifdef DEBUG
+	cout << endl << "Print mask after DSMGA2::findMask" << endl;
+	list<int>::iterator it = result.begin();
+	cout << "[" << *it; 
+    it++;
+	for(; it != result.end(); it++)
+		cout << "-(" << connection[*it] << ")-" << *it;
+	cout << "]" << endl;
+	#endif
     /////////////
 	delete []connection;
 		
@@ -491,7 +494,7 @@ void DSMGA2::mixing() {
     buildGraph();
 
     //for (int i=0; i<ell; ++i)
-    //    findClique(i, masks[i]);
+    //    findClique(i, masks[i]); // replaced by findMask in restrictedMixing
 
     int repeat = (ell>50)? ell/50: 1;
 
@@ -629,8 +632,7 @@ void DSMGA2::buildGraph() {
 
 // from 1 to ell, pick by max edge
 void DSMGA2::findClique(int startNode, list<int>& result) {
-/*
-
+    /*
     result.clear();
 
     DLLA rest(ell);
@@ -667,7 +669,7 @@ void DSMGA2::findClique(int startNode, list<int>& result) {
 
 
     delete []connection;
-*/
+    */
 }
 
 double DSMGA2::computeMI(double a00, double a01, double a10, double a11) const {
