@@ -17,6 +17,7 @@
 //2016-03-03
 #include <iomanip>
 #define DEBUG
+#define PRINTMASK 
 
 using namespace std;
 
@@ -235,8 +236,8 @@ void DSMGA2::findMask(Chromosome& ch, list<int>& result){
     
 	DLLA rest(ell);
 	genOrderELL();
-	//for( int i = 0; i < ell; i++){
-	for( int i = 0; i < 5; i++){ // 2016-10-17
+	for( int i = 0; i < ell; i++){
+	//for( int i = 0; i < 5; i++){ // 2016-10-17
 		if(orderELL[i] == startNode)
 			result.push_back(orderELL[i]);
 		else
@@ -280,7 +281,7 @@ void DSMGA2::findMask(Chromosome& ch, list<int>& result){
 	}
 
     //print mask
-    #ifdef DEBUG
+    #ifdef PRINTMASK 
 	cout << endl << "Print mask after DSMGA2::findMask" << endl;
 	list<int>::iterator it = result.begin();
 	cout << "[" << *it; 
@@ -362,7 +363,9 @@ void DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
         return;
     }
 
-    if (trial.getFitness() >= des.getFitness()) {
+    //2016-10-21
+    if (trial.getFitness() >= des.getFitness() - EPSILON) {
+    //if (trial.getFitness() >= des.getFitness()) {
         pHash.erase(des.getKey());
         pHash[trial.getKey()] = trial.getFitness();
 
@@ -397,30 +400,34 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
             if (size > ub) break;
         }
 
-        if (isInP(trial)) continue;
+        //if (isInP(trial)) continue;
+        //2016-10-21
+        if (isInP(trial)) break;
 
+        //2016-03-03
+        #ifdef DEBUG
+        //cout << "RM Fitness improve: " << setw(4) << trial.getFitness()-ch.getFitness();
+        vector<int>::iterator it = takenMask.begin();
+        cout << "  Taken Mask: [" << *it;
+        it++;
+        for(;it != takenMask.end(); it++)
+            cout << "-" << *it;
+        cout << "]" << endl;
+        cout << setw(6) << ch.getFitness() << " before : ";
+        for(int i = 0; i < ch.getLength(); i++)
+            cout << ch.getVal(i);
+        cout << endl;
+        cout << setw(6) << trial.getFitness() << " after  : ";
+        for(int i = 0; i < trial.getLength(); i++)
+            cout << trial.getVal(i);
+        cout << endl << endl; 
+        #endif
+        ////////////
 
-        if (trial.getFitness() >= ch.getFitness()) { // QUESTION: Why >= instead of > 
+        //2016-10-21 float point number comparison
+        if (trial.getFitness() >= ch.getFitness() - EPSILON) {
+        //if (trial.getFitness() >= ch.getFitness()) { // QUESTION: Why >= instead of > 
         //if (trial.getFitness() > ch.getFitness()) { 
-            //2016-03-03
-			#ifdef DEBUG
-			cout << "RM Fitness improve: " << setw(4) << trial.getFitness()-ch.getFitness();
-	        vector<int>::iterator it = takenMask.begin();
-			cout << "  Taken Mask: [" << *it;
-			it++;
-			for(;it != takenMask.end(); it++)
-				cout << "-" << *it;
-			cout << "]" << endl;
-			cout << "before : ";
-			for(int i = 0; i < ch.getLength(); i++)
-				cout << ch.getVal(i);
-            cout << endl;
-            cout << "after  : ";
-			for(int i = 0; i < trial.getLength(); i++)
-				cout << trial.getVal(i);
-            cout << endl << endl; 
-            #endif
-			////////////
 
             pHash.erase(ch.getKey());
             pHash[trial.getKey()] = trial.getFitness();
