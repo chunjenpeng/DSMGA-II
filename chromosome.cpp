@@ -359,7 +359,9 @@ bool Chromosome::tryFlipping(int index) {
     double oldF = getFitness();
     flip(index);
 
-    if (getFitness() <= oldF) {
+    //2016-10-21
+    //if (getFitness() <= oldF) {
+    if (getFitness() - EPSILON <= oldF) {
         flip(index);
         evaluated = true;
         fitness = oldF;

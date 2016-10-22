@@ -286,7 +286,9 @@ void DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
         return;
     }
 
-    if (trial.getFitness() >= des.getFitness()) {
+    //2016-10-21
+    if (trial.getFitness() >= des.getFitness() - EPSILON) {
+    //if (trial.getFitness() >= des.getFitness()) {
         pHash.erase(des.getKey());
         pHash[trial.getKey()] = trial.getFitness();
 
@@ -332,37 +334,20 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         for(; it!= takenMask.end(); it++)
             cout << "-" << *it;
         cout << "]" << endl;
-        cout << setw(5) << ch.getFitness() << "before : ";
+        cout << setw(6) << ch.getFitness() << " before : ";
         for(int i = 0; i < ch.getLength(); i++)
             cout << ch.getVal(i);
         cout << endl;
-        cout << setw(5) << trial.getFitness() << "after  : ";
+        cout << setw(6) << trial.getFitness() << " after  : ";
         for(int i = 0; i < trial.getLength(); i++)
             cout << trial.getVal(i);
         cout << endl << endl;
         #endif
         ////////
-
-        if (trial.getFitness() >= ch.getFitness()) {
-        /////////
-        #ifdef DEBUG
-        cout << "RM Fitness improve: " << trial.getFitness() - ch.getFitness();
-        vector<int>::iterator it = takenMask.begin();
-        cout << " Taken Mask: [" << *it;
-        it++;
-        for(; it!= takenMask.end(); it++)
-            cout << "-" << *it;
-        cout << "]" << endl;
-        cout << setw(5) << ch.getFitness() << "before : ";
-        for(int i = 0; i < ch.getLength(); i++)
-            cout << ch.getVal(i);
-        cout << endl;
-        cout << setw(5) << trial.getFitness() << "after  : ";
-        for(int i = 0; i < trial.getLength(); i++)
-            cout << trial.getVal(i);
-        cout << endl << endl;
-        #endif
-        /////////
+        
+        //2016-10-21
+        if (trial.getFitness() >= ch.getFitness() - EPSILON) {
+        //if (trial.getFitness() >= ch.getFitness()) {
             pHash.erase(ch.getKey());
             pHash[trial.getKey()] = trial.getFitness();
 
