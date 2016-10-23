@@ -16,8 +16,8 @@
 
 //2016-03-03
 #include <iomanip>
-#define DEBUG
-#define PRINTMASK 
+//#define DEBUG
+//#define PRINTMASK 
 
 using namespace std;
 
@@ -615,8 +615,15 @@ void DSMGA2::buildGraph() {
             #endif
 
             //graph.write(i,j,linkage);
-			pair<double, double> p(linkage00, linkage01);
-			graph.write(i, j, p);
+            if (generation < 7){
+            //if (true){
+                pair<double, double> p(linkage, linkage);
+                graph.write(i, j, p);
+            }
+            else{
+                pair<double, double> p(linkage00, linkage01);
+                graph.write(i, j, p);
+            }
 			
 			//cout << "         linkage00 = " << 
 			//cout << "         linkage01 = " << 
