@@ -16,11 +16,11 @@
 
 //2016-03-03
 #include <iomanip>
-#define DEBUG
-#define PRINTMASK 
+//#define DEBUG
+//#define PRINTMASK 
 
 using namespace std;
-
+int rm_fail = 0;
 
 DSMGA2::DSMGA2 (int n_ell, int n_nInitial, int n_maxGen, int n_maxFe, int fffff) {
 
@@ -168,9 +168,12 @@ bool DSMGA2::foundOptima () {
 
 void DSMGA2::showStatistics () {
 
-    printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f \n ",
+    //printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f \n ",
+    //        generation, stFitness.getMax (), stFitness.getMean (),
+    //        stFitness.getMin ());
+    printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f RM failed:%d \n ",
             generation, stFitness.getMax (), stFitness.getMean (),
-            stFitness.getMin ());
+            stFitness.getMin (), rm_fail);
     fflush(NULL);
 }
 
@@ -314,7 +317,10 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
 
 
     bool taken = restrictedMixing(ch, mask);
-
+    
+    //2016-10-22 
+    if (!taken) rm_fail++; 
+        
     EQ = true;
     if (taken) {
         //2016-10-22
