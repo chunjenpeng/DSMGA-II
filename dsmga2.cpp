@@ -16,7 +16,7 @@
 
 #include <iomanip>
 using namespace std;
-//#define DEBUG
+#define DEBUG
 
 DSMGA2::DSMGA2 (int n_ell, int n_nInitial, int n_maxGen, int n_maxFe, int fffff) {
 
@@ -240,6 +240,17 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
 
     EQ = true;
     if (taken) {
+        //2016-10-22
+        #ifdef DEBUG 
+        cout << "population:" << endl;
+        for (int i = 0; i < nCurrent; ++i){
+            cout << setw(16) << " ";
+            for (int j = 0; j < ell; ++j){
+                cout << population[i].getVal(j);
+            }
+            cout << endl;
+        }
+        #endif
 
         genOrderN();
 
