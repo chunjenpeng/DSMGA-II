@@ -632,8 +632,15 @@ void DSMGA2::buildGraph() {
             #endif
 
             //graph.write(i,j,linkage);
-			pair<double, double> p(linkage00, linkage01);
-			graph.write(i, j, p);
+            //2016-10-22
+            if(Chromosome::nfe < 50000){
+                pair<double, double> p(linkage, linkage);
+                graph.write(i, j, p);
+            }
+            else{
+                pair<double, double> p(linkage00, linkage01);
+                graph.write(i, j, p);
+            }
 			
 			//cout << "         linkage00 = " << 
 			//cout << "         linkage01 = " << 

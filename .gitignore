@@ -1,6 +1,8 @@
 DSMGA2
 sweep
+genZobrist
 *.swp
 *.~
 *.o
-genZobrist
+data/tempFile
+nohup.out
