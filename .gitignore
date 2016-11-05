@@ -1,5 +1,6 @@
 *.o
 *.swp
+data/*
 DSMGA2
 genZobrist
 sweep
