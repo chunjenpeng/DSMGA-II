@@ -229,59 +229,62 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
     
     //2016-11-11 
     list<int> mask;
-    double score = 0.0;
-    
+    int chance = 0; 
     for( pair< list<int>, double > p : sortedMasks ){
+        if( chance > ell ) break; 
         mask = p.first;
-        score = p.second;
+        //double score = p.second;
         //if (*(mask.begin()) == r){
             //printMaskScore(p);
         //    break;
         //}
-    //}
     
     
-    size_t size = findSize(ch, mask);
-    if (size > (size_t)ell/2)
-        size = ell/2;
+        size_t size = findSize(ch, mask);
+        if (size > (size_t)ell/2)
+            size = ell/2;
   
-   //2016-11-12
-   if (mask.size() > size) continue;
+        //2016-11-12
+        if (mask.size() > size) continue;
+        // prune mask to exactly size
+        // while (mask.size() > size)
+        //    mask.pop_back();
 
+        //2016-11-11 
+        //printMaskScore(make_pair(mask, score));
 
-    // prune mask to exactly size
-    //while (mask.size() > size)
-    //    mask.pop_back();
+        bool taken = restrictedMixing(ch, mask);
+        if (Chromosome::hit) break;
 
-    //2016-11-11 
-    printMaskScore(make_pair(mask, score));
+        EQ = true;
+        if (taken) {
 
-    bool taken = restrictedMixing(ch, mask);
+            genOrderN();
 
-    EQ = true;
-    if (taken) {
+            for (int i=0; i<nCurrent; ++i) {
 
-        genOrderN();
-
-        for (int i=0; i<nCurrent; ++i) {
-
-            if (EQ)
-                backMixingE(ch, mask, population[orderN[i]]);
-            else
-                backMixing(ch, mask, population[orderN[i]]);
-        }
-        //2016-10-22
-        #ifdef DEBUG1
-        cout << "population:" << endl;
-        for (int i = 0; i < nCurrent; ++i){
-            cout << setw(16) << " ";
-            for (int j = 0; j < ell; ++j){
-                cout << population[i].getVal(j);
+                if (EQ)
+                    backMixingE(ch, mask, population[orderN[i]]);
+                else
+                    backMixing(ch, mask, population[orderN[i]]);
+                if (Chromosome::hit) break;
+                
             }
-            cout << endl;
+            if (Chromosome::hit) break;
+            
+            //2016-10-22
+            #ifdef DEBUG1
+            cout << "population:" << endl;
+            for (int i = 0; i < nCurrent; ++i){
+                cout << setw(16) << " ";
+                for (int j = 0; j < ell; ++j){
+                    cout << population[i].getVal(j);
+                }
+                cout << endl;
+            }
+            #endif
         }
-        #endif
-    }
+        break;
 
     }
 
@@ -344,7 +347,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         trial = ch;
 
         //2016-10-19
-        vector<int> takenMask;
+        list<int> takenMask;
 
         for (list<int>::iterator it = mask.begin(); it != mask.end(); ++it) {
 
@@ -358,40 +361,48 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         }
 
         //if (isInP(trial)) continue;
-        //*
-        if (isInP(trial)){
-            cout << "isInP\n";
-        //2016-10-22
+        //if (isInP(trial)) break;
         #ifdef DEBUG
-        cout << "population:" << endl;
-        for (int i = 0; i < nCurrent; ++i){
-            cout << setw(16) << " ";
-            for (int j = 0; j < ell; ++j){
-                cout << population[i].getVal(j);
-            }
-            cout << endl;
+        if (isInP(trial)){
+            printMask(takenMask);
+            cout << " isInP\n";
         }
         #endif
-            break;
-        }
-        //*/
+            //2016-10-22
+            #ifdef PRINTPOPULATION 
+            cout << "population:" << endl;
+            for (int i = 0; i < nCurrent; ++i){
+                cout << setw(16) << " ";
+                for (int j = 0; j < ell; ++j){
+                    cout << population[i].getVal(j);
+                }
+                cout << endl;
+            }
+            #endif
+            //break;
+        //}
         /////////
         #ifdef DEBUG
-        vector<int>::iterator it = takenMask.begin();
-        cout << " Taken Mask: [" << *it;
-        it++;
-        for(; it!= takenMask.end(); it++)
-            cout << "-" << *it;
-        cout << "]" << endl;
+        cout << " Try Mask:";
+        //printMask(takenMask);
+        for( const auto &maskPair: sortedMasks ){
+           if (maskPair.first == takenMask){
+               printMaskScore( maskPair );
+               break;
+           }
+        }
+
         cout << setw(6) << ch.getFitness() << " before : ";
         for(int i = 0; i < ch.getLength(); i++)
             cout << ch.getVal(i);
         cout << endl;
+        
         cout << setw(6) << trial.getFitness() << " after  : ";
         for(int i = 0; i < trial.getLength(); i++)
             cout << trial.getVal(i);
-        cout << endl << endl;
-        cout << "nfe:" << Chromosome::nfe << ", lsnfe:" << Chromosome::lsnfe << ", hitnfe:" << Chromosome::hitnfe << endl;
+        cout << endl;
+        cout << "nfe:" << Chromosome::nfe << ", lsnfe:" << Chromosome::lsnfe << ", hit:" << Chromosome::hit << endl;
+        cout << endl ;
         cin.sync();
         cin.get();
         #endif
@@ -555,11 +566,12 @@ void DSMGA2::sortMasks() {
                 return left.second > right.second;
         });
 
-    
+    #ifdef DEBUG 
     for (auto it = sortedMasks.begin(); it != sortedMasks.begin()+50; ++it )
         printMaskScore( *it );
     cin.sync();
     cin.get();
+    #endif
 }
 
 void DSMGA2::mixing() {
