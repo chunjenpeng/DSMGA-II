@@ -8,6 +8,7 @@
 #ifndef _DSMGA2_H_
 #define _DSMGA2_H_
 
+#include <utility>
 #include <list>
 #include "chromosome.h"
 #include "statistics.h"
@@ -92,6 +93,15 @@ public:
     size_t findSize(Chromosome&, list<int>&) const;
     size_t findSize(Chromosome&, list<int>&, Chromosome&) const;
 
+    //2016-11-11
+    vector< pair< list<int>, double > > sortedMasks;
+    //map< list<int>, double > sortedMasks; //?is mask small enough to use map
+    void generateRestMask( const list<int> &, vector<int> & );
+    void printMaskScore( const pair< list<int>, double >& );
+    void printMask( const list<int> & );
+    bool maskExist( const list<int> & mask );
+    double calculateScore( const list<int>& );
+    void sortMasks();
 
 };
 
