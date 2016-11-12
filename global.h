@@ -19,7 +19,8 @@
 #include "zkey.h"
 #include "sat.h"
 
-#define EPSILON (1e-8)
+//#define EPSILON (1e-8)
+#define EPSILON (1e-6)
 #define INF (1e10)
 
 extern bool GHC;
