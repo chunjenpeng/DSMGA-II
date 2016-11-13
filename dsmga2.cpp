@@ -220,14 +220,25 @@ int DSMGA2::countXOR(int x, int y) const {
     return n;
 }
 
+void DSMGA2::printPopulation() const {
+    cout << "population:" << endl;
+    for (int i = 0; i < nCurrent; ++i){
+        cout << setw(16) << " ";
+        for (int j = 0; j < ell; ++j){
+            cout << population[i].getVal(j);
+        }
+        cout << endl;
+    }
+}
 
 void DSMGA2::restrictedMixing(Chromosome& ch) {
 
     int r = myRand.uniformInt(0, ell-1);
-
+    
     list<int> mask = masks[r];
 
     size_t size = findSize(ch, mask);
+    
     if (size > (size_t)ell/2)
         size = ell/2;
 
@@ -240,17 +251,6 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
 
     EQ = true;
     if (taken) {
-        //2016-10-22
-        #ifdef DEBUG 
-        cout << "population:" << endl;
-        for (int i = 0; i < nCurrent; ++i){
-            cout << setw(16) << " ";
-            for (int j = 0; j < ell; ++j){
-                cout << population[i].getVal(j);
-            }
-            cout << endl;
-        }
-        #endif
 
         genOrderN();
 
@@ -320,41 +320,44 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         Chromosome trial(ell);
         trial = ch;
 
-        //2016-10-19
-        vector<int> takenMask;
-
         for (list<int>::iterator it = mask.begin(); it != mask.end(); ++it) {
-
-            //2016-10-19
-            takenMask.push_back(*it);
-
+            
             trial.flip(*it);
 
             ++size;
             if (size > ub) break;
         }
+        
+        #ifdef DEBUG
+        cout << " Taken Mask: [";
+        for(auto it = mask.begin(); it != next(mask.begin(),size-1); ++it){
+            cout << *it << "-";
+        }
+        cout << "\b]";
+        #endif
 
         //if (isInP(trial)) continue;
-        if (isInP(trial)) break;
+        if (isInP(trial)){
+            #ifdef DEBUG
+            cout << " isInP" << endl;
+            #endif
+            break;
+        }
 
-        /////////
-        #ifdef DEBUG
-        vector<int>::iterator it = takenMask.begin();
-        cout << " Taken Mask: [" << *it;
-        it++;
-        for(; it!= takenMask.end(); it++)
-            cout << "-" << *it;
-        cout << "]" << endl;
-        cout << setw(6) << ch.getFitness() << " before : ";
+        #ifdef DEBUG 
+        cout << endl;
+        printf(" %.6f before : ", ch.getFitness());
         for(int i = 0; i < ch.getLength(); i++)
             cout << ch.getVal(i);
         cout << endl;
-        cout << setw(6) << trial.getFitness() << " after  : ";
+        
+        printf(" %.6f after  : ", trial.getFitness());
         for(int i = 0; i < trial.getLength(); i++)
             cout << trial.getVal(i);
-        cout << endl << endl;
+        cout << endl;
+        cin.sync();
+        cin.get();
         #endif
-        ////////
         
         //2016-10-21
         if (trial.getFitness() >= ch.getFitness() - EPSILON) {

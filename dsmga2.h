@@ -92,7 +92,7 @@ public:
     size_t findSize(Chromosome&, list<int>&) const;
     size_t findSize(Chromosome&, list<int>&, Chromosome&) const;
 
-
+    void printPopulation() const;
 };
 
 
