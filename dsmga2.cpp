@@ -45,6 +45,7 @@ DSMGA2::DSMGA2 (int n_ell, int n_nInitial, int n_maxGen, int n_maxFe, int fffff)
     orderELL = new int[ell];
     population = new Chromosome[nCurrent];
     fastCounting = new FastCounting[ell];
+    sortedMasks = new vector< pair< list<int>, double > > [ell];
 
     for (int i = 0; i < ell; i++)
         fastCounting[i].init(nCurrent);
@@ -71,6 +72,7 @@ DSMGA2::~DSMGA2 () {
     delete []selectionIndex;
     delete []population;
     delete []fastCounting;
+    delete []sortedMasks;
 }
 
 
@@ -221,75 +223,6 @@ int DSMGA2::countXOR(int x, int y) const {
 }
 
 
-void DSMGA2::restrictedMixing(Chromosome& ch) {
-
-    //int r = myRand.uniformInt(0, ell-1);
-
-    //list<int> mask = masks[r];
-    
-    //2016-11-11 
-    list<int> mask;
-    int chance = 0; 
-    for( pair< list<int>, double > p : sortedMasks ){
-        if( chance > ell ) break; 
-        mask = p.first;
-        //double score = p.second;
-        //if (*(mask.begin()) == r){
-            //printMaskScore(p);
-        //    break;
-        //}
-    
-    
-        size_t size = findSize(ch, mask);
-        if (size > (size_t)ell/2)
-            size = ell/2;
-  
-        //2016-11-12
-        if (mask.size() > size) continue;
-        // prune mask to exactly size
-        // while (mask.size() > size)
-        //    mask.pop_back();
-
-        //2016-11-11 
-        //printMaskScore(make_pair(mask, score));
-
-        bool taken = restrictedMixing(ch, mask);
-        if (Chromosome::hit) break;
-
-        EQ = true;
-        if (taken) {
-
-            genOrderN();
-
-            for (int i=0; i<nCurrent; ++i) {
-
-                if (EQ)
-                    backMixingE(ch, mask, population[orderN[i]]);
-                else
-                    backMixing(ch, mask, population[orderN[i]]);
-                if (Chromosome::hit) break;
-                
-            }
-            if (Chromosome::hit) break;
-            
-            //2016-10-22
-            #ifdef DEBUG1
-            cout << "population:" << endl;
-            for (int i = 0; i < nCurrent; ++i){
-                cout << setw(16) << " ";
-                for (int j = 0; j < ell; ++j){
-                    cout << population[i].getVal(j);
-                }
-                cout << endl;
-            }
-            #endif
-        }
-        break;
-
-    }
-
-}
-
 void DSMGA2::backMixing(Chromosome& source, list<int>& mask, Chromosome& des) {
 
     Chromosome trial(ell);
@@ -337,100 +270,116 @@ void DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
 bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
 
     bool taken = false;
-    size_t lastUB = 0;
+    Chromosome trial(ell);
+    trial = ch;
 
-    //for (size_t ub = 1; ub <= mask.size(); ++ub) {
-    for (size_t ub = mask.size(); ub <= mask.size(); ++ub) {
-
-        size_t size = 1;
-        Chromosome trial(ell);
-        trial = ch;
-
-        //2016-10-19
-        list<int> takenMask;
-
-        for (list<int>::iterator it = mask.begin(); it != mask.end(); ++it) {
-
-            //2016-10-19
-            takenMask.push_back(*it);
-
+    for (list<int>::iterator it = mask.begin(); it != mask.end(); ++it) {
             trial.flip(*it);
-
-            ++size;
-            if (size > ub) break;
-        }
-
-        //if (isInP(trial)) continue;
-        //if (isInP(trial)) break;
-        #ifdef DEBUG
-        if (isInP(trial)){
-            printMask(takenMask);
-            cout << " isInP\n";
-        }
-        #endif
-            //2016-10-22
-            #ifdef PRINTPOPULATION 
-            cout << "population:" << endl;
-            for (int i = 0; i < nCurrent; ++i){
-                cout << setw(16) << " ";
-                for (int j = 0; j < ell; ++j){
-                    cout << population[i].getVal(j);
-                }
-                cout << endl;
-            }
-            #endif
-            //break;
-        //}
-        /////////
-        #ifdef DEBUG
-        cout << " Try Mask:";
-        //printMask(takenMask);
-        for( const auto &maskPair: sortedMasks ){
-           if (maskPair.first == takenMask){
-               printMaskScore( maskPair );
-               break;
-           }
-        }
-
-        cout << setw(6) << ch.getFitness() << " before : ";
-        for(int i = 0; i < ch.getLength(); i++)
-            cout << ch.getVal(i);
-        cout << endl;
-        
-        cout << setw(6) << trial.getFitness() << " after  : ";
-        for(int i = 0; i < trial.getLength(); i++)
-            cout << trial.getVal(i);
-        cout << endl;
-        cout << "nfe:" << Chromosome::nfe << ", lsnfe:" << Chromosome::lsnfe << ", hit:" << Chromosome::hit << endl;
-        cout << endl ;
-        cin.sync();
-        cin.get();
-        #endif
-        ////////
-        
-        //2016-10-21
-        if (trial.getFitness() > ch.getFitness() - EPSILON) {
-        //if (trial.getFitness() >= ch.getFitness()) {
-            pHash.erase(ch.getKey());
-            pHash[trial.getKey()] = trial.getFitness();
-
-            taken = true;
-            ch = trial;
-        }
-
-        if (taken) {
-            lastUB = ub;
-            break;
-        }
     }
+    /*
+    if (isInP(trial)){
+        #ifdef DEBUG
+        printMask(mask);
+        cout << " isInP\n";
+        #endif
+    }
+    */ 
+    
+    #ifdef DEBUG
+    cout << " Try Mask:";
+    printMask(mask);
 
-    if (lastUB != 0) {
-        while (mask.size() > lastUB)
-            mask.pop_back();
+    printf("%.6f before : ", ch.getFitness());
+    for(int i = 0; i < ch.getLength(); i++)
+        cout << ch.getVal(i);
+    cout << endl;
+    
+    printf("%.6f after  : ", trial.getFitness());
+    for(int i = 0; i < trial.getLength(); i++)
+        cout << trial.getVal(i);
+    cout << endl;
+    cout << "nfe:" << Chromosome::nfe << ", lsnfe:" << Chromosome::lsnfe << ", hit:" << Chromosome::hit << endl;
+    cin.sync();
+    cin.get();
+    #endif
+    
+    //2016-10-21
+    if (trial.getFitness() > ch.getFitness() - EPSILON) {
+    //if (trial.getFitness() >= ch.getFitness()) {
+        pHash.erase(ch.getKey());
+        pHash[trial.getKey()] = trial.getFitness();
+
+        taken = true;
+        ch = trial;
     }
 
     return taken;
 
+}
+
+void DSMGA2::restrictedMixing(Chromosome& ch) {
+
+    int r = myRand.uniformInt(0, ell-1);
+    //list<int> mask = masks[r];
+    
+    int count = 0;
+    //2016-11-11 
+    for( pair< list<int>, double > p : sortedMasks[r] ){
+        //2016-11-11 
+        printMaskScore(p);
+        list<int> mask = p.first;
+        
+        
+        size_t size = findSize(ch, mask);
+        if (size > (size_t)ell/2)
+            size = ell/2;
+        
+        if(mask.size() > size)
+            if(++count > 10) break;
+
+        // prune mask to exactly size
+        while (mask.size() > size)
+            mask.pop_back();
+         
+        
+        Chromosome trial(ell);
+        trial = ch;
+        for (list<int>::iterator it = mask.begin(); it != mask.end(); ++it) {
+                trial.flip(*it);
+        }
+        if (isInP(trial)){
+            #ifdef DEBUG
+            cout << " isInP\n";
+            #endif
+            break;
+        }
+   
+
+        bool taken = restrictedMixing(ch, mask);
+        if (Chromosome::hit) break;
+
+        EQ = true;
+        if (taken) {
+            cout << "Taken, do backMixing" << endl;
+
+            genOrderN();
+
+            for (int i=0; i<nCurrent; ++i) {
+
+                if (EQ)
+                    backMixingE(ch, mask, population[orderN[i]]);
+                else
+                    backMixing(ch, mask, population[orderN[i]]);
+                if (Chromosome::hit) break;
+                
+            }
+            if (Chromosome::hit) break;
+            
+            //2016-10-22
+            //printPopulation();
+            break;
+        }
+    }
 }
 
 size_t DSMGA2::findSize(Chromosome& ch, list<int>& mask) const {
@@ -471,6 +420,17 @@ size_t DSMGA2::findSize(Chromosome& ch, list<int>& mask, Chromosome& ch2) const 
         ++size;
     }
     return size;
+}
+
+void DSMGA2::printPopulation(){
+    cout << "population:" << endl;
+    for (int i = 0; i < nCurrent; ++i){
+        cout << setw(16) << " ";
+        for (int j = 0; j < ell; ++j){
+            cout << population[i].getVal(j);
+        }
+        cout << endl;
+    }
 }
 
 void DSMGA2::printMask( const list<int> &mask ){
@@ -533,7 +493,8 @@ double DSMGA2::calculateScore( const list<int> &mask ) {
 
 bool DSMGA2::maskExist( const list<int> & mask ){
     // Slow version... Need to use map in future
-    for( const auto &maskPair: sortedMasks ){
+    int i = *(mask.begin());
+    for( const auto &maskPair: sortedMasks[i] ){
        if (maskPair.first == mask) 
            return true;
     }
@@ -542,36 +503,30 @@ bool DSMGA2::maskExist( const list<int> & mask ){
 
 void DSMGA2::sortMasks() {
     for (int i = 0; i < ell; ++i){
+        sortedMasks[i].clear();
         list<int> fullMask = masks[i]; //full length mask, need to split to ILS
         for (int n = 0; n < ell; ++n) {
             list<int> mask = fullMask;
-            //printMask(mask);
-            mask.sort();
-            if (!maskExist( mask )){
-                double score = calculateScore(mask);
-                sortedMasks.push_back( make_pair( mask, score) );
-            }
-            else{
-                //Replace with higher score ?
-            }
+            double score = calculateScore(mask);
+            sortedMasks[i].push_back( make_pair( mask, score) );
             fullMask.pop_back();
         }
+
+        sort( sortedMasks[i].begin(), sortedMasks[i].end(),
+            [](const pair< list<int>,double > &left, const pair< list<int>,double > &right){
+                if (fabs(left.second-right.second)<EPSILON) // float equal comparison
+                    return left.first.size() > right.first.size();
+                else
+                    return left.second > right.second;
+            });
+    
+        #ifdef PRINTMASKS 
+        for (auto it = sortedMasks[i].begin(); it != sortedMasks[i].begin()+50; ++it )
+            printMaskScore( *it );
+        cin.sync();
+        cin.get();
+        #endif
     }
-
-    sort( sortedMasks.begin(), sortedMasks.end(),
-        [](const pair< list<int>,double > &left, const pair< list<int>,double > &right){
-            if (fabs(left.second-right.second)<EPSILON) // float equal comparison
-                return left.first.size() > right.first.size();
-            else
-                return left.second > right.second;
-        });
-
-    #ifdef DEBUG 
-    for (auto it = sortedMasks.begin(); it != sortedMasks.begin()+50; ++it )
-        printMaskScore( *it );
-    cin.sync();
-    cin.get();
-    #endif
 }
 
 void DSMGA2::mixing() {
@@ -587,7 +542,6 @@ void DSMGA2::mixing() {
         findClique(i, masks[i]);
 
     //2016-11-11
-    sortedMasks.clear();
     sortMasks();
 
     int repeat = (ell>50)? ell/50: 1;
@@ -601,9 +555,6 @@ void DSMGA2::mixing() {
         }
         if (Chromosome::hit) break;
     }
-
-    //2016-11-11
-    sortedMasks.clear();
 
 }
 

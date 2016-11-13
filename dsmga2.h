@@ -94,9 +94,10 @@ public:
     size_t findSize(Chromosome&, list<int>&, Chromosome&) const;
 
     //2016-11-11
-    vector< pair< list<int>, double > > sortedMasks;
+    vector< pair< list<int>, double > > *sortedMasks;
     //map< list<int>, double > sortedMasks; //?is mask small enough to use map
     void generateRestMask( const list<int> &, vector<int> & );
+    void printPopulation();
     void printMaskScore( const pair< list<int>, double >& );
     void printMask( const list<int> & );
     bool maskExist( const list<int> & mask );
