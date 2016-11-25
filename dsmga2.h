@@ -102,6 +102,10 @@ public:
     void printMask( const list<int> & );
     bool maskExist( const list<int> & mask );
     double calculateScore( const list<int>& );
+    double averageEdge( const list<int>& );
+    double DaviesBouldin_index( const list<int>& );
+    double Dunn_index( const list<int>& );
+    double silhouette_coefficient( const list<int>& );
     void sortMasks();
 
 };

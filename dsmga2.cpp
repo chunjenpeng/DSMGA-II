@@ -17,7 +17,6 @@
 
 #include <iomanip>
 using namespace std;
-#define DEBUG
 
 DSMGA2::DSMGA2 (int n_ell, int n_nInitial, int n_maxGen, int n_maxFe, int fffff) {
 
@@ -161,10 +160,14 @@ bool DSMGA2::foundOptima () {
 
 
 void DSMGA2::showStatistics () {
-
+    /*
     printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f \n ",
             generation, stFitness.getMax (), stFitness.getMean (),
             stFitness.getMin ());
+    */
+    printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f nfe:%d\n ",
+            generation, stFitness.getMax (), stFitness.getMean (),
+            stFitness.getMin (), Chromosome::nfe);
     fflush(NULL);
 }
 
@@ -275,7 +278,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
     //2016-11-11 
     for( pair< list<int>, double > p : sortedMasks[r] ){
         //2016-11-11 
-        #ifdef DEBUG
+        #ifdef DEBUG1
         printMaskScore(p);
         #endif
         sMask = p.first;
@@ -292,7 +295,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
     
         if (isInP(trial)){
             #ifdef DEBUG
-            printMask(sMask);
+            printMaskScore(p);
             cout << " isInP\n";
             #endif
             break;
@@ -300,7 +303,8 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
     
         #ifdef DEBUG
         cout << " Try Mask:";
-        printMask(sMask);
+        printMaskScore(p);
+        //printMask(sMask);
 
         printf("%.6f before : ", ch.getFitness());
         for(int i = 0; i < ch.getLength(); i++)
@@ -449,7 +453,7 @@ void DSMGA2::generateRestMask( const list<int> &mask, vector<int> &rest ){
     }
 }
 
-double DSMGA2::calculateScore( const list<int> &mask ) {
+double DSMGA2::averageEdge( const list<int> &mask ) {
     vector<int> rest;
     generateRestMask( mask, rest );
     
@@ -484,8 +488,65 @@ double DSMGA2::calculateScore( const list<int> &mask ) {
 
     //double score = intraCluster - interCluster;
     double score = restIntraCluster + intraCluster - interCluster;
-    //printMaskScore( make_pair( mask, score) );
     return score;
+}
+
+double DSMGA2::DaviesBouldin_index( const list<int> &mask ) {
+    //if (generation%2 == 0 ) return 1.0/mask.size();
+    if (mask.size() == 1) return 1.0;
+    vector<int> rest;
+    generateRestMask( mask, rest );
+    
+    double *S = new double [ell](); // initialized all to 0
+    for (auto it = mask.begin(); it != mask.end(); ++it) {
+        for ( auto it1 = mask.begin(); it1 != mask.end(); ++it1 ) {
+            if ( *it != *it1 ) 
+                S[*it] += graph( *it, *it1 );
+            /*if ( generation == 2 ) {
+                cout << *it << "-" << *it1 << ":" << graph( *it, *it1 ) << endl;
+                cin.sync();
+                cin.get();
+            }*/
+        }
+        S[*it] = (S[*it] < EPSILON) ? 0 : S[*it] /= mask.size();
+    }
+
+    for (auto it = rest.begin(); it != rest.end(); ++it) {
+        for ( auto it1 = rest.begin(); it1 != rest.end(); ++it1 ) {
+            //if ( *it != *it1 ) 
+                //S[*it] += graph( *it, *it1 );
+        }
+        //S[*it] /= rest.size();
+    }
+
+    double DB = -INF;
+    for (auto i = mask.begin(); i != mask.end(); ++i) {
+        for (auto j = rest.begin(); j != rest.end(); ++j) {
+            //double Rij = (S[*i] + S[*j])/graph( *i, *j );
+            //double Rij = (S[*i])/graph( *i, *j );
+            double Mij = graph( *i, *j );
+            double Rij = ( Mij < EPSILON ) ? log(S[*i]) : log(S[*i]) - log(Mij);
+            DB = ( DB > Rij ) ? DB : Rij;
+        }
+    }
+    return DB;
+}
+
+double DSMGA2::Dunn_index( const list<int> &mask ) {
+    double score = 0.0;
+    return score;
+}
+
+double DSMGA2::silhouette_coefficient( const list<int> &mask ) {
+    double score = 0.0;
+    return score;
+}
+
+double DSMGA2::calculateScore( const list<int> &mask ) {
+    //return averageEdge( mask );
+    return DaviesBouldin_index( mask );
+    //return Dunn_index( mask );
+    //return silhouette_coefficient( mask );
 }
 
 bool DSMGA2::maskExist( const list<int> & mask ){
@@ -504,6 +565,10 @@ void DSMGA2::sortMasks() {
         list<int> mask = masks[i]; //full length mask, need to split to ILS
         for (int n = 0; n < ell; ++n) {
             double score = calculateScore(mask);
+            //cout << score <<" : ";
+            //printMask( mask );
+            //cin.sync();
+            //cin.get();
             sortedMasks[i].push_back( make_pair( mask, score) );
             mask.pop_back();
         }
@@ -515,14 +580,14 @@ void DSMGA2::sortMasks() {
                 else
                     return left.second > right.second;
             });
+    }
     
-        #ifdef PRINTMASKS 
-        for (auto it = sortedMasks[i].begin(); it != sortedMasks[i].begin()+50; ++it )
+        #ifdef DEBUG1 
+        for (auto it = sortedMasks[i].begin(); it != sortedMasks[i].begin()+5; ++it )
             printMaskScore( *it );
         cin.sync();
         cin.get();
         #endif
-    }
 }
 
 void DSMGA2::mixing() {
