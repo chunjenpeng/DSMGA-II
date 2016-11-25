@@ -4,7 +4,6 @@ CXX = g++
 CXXFLAGS = -O2 -Wall -march=native -std=c++11
 INCLUDE = 
 TLIB = -lm
-
 #-----Suffix Rules---------------------------
 # set up C++ suffixes and relationship between .cc and .o files
 
@@ -33,6 +32,8 @@ OBJ2 = $(addsuffix .o, $(basename $(SRC2)))
 OBJ3 = $(addsuffix .o, $(basename $(SRC3)))
 
 all: DSMGA2 sweep genZobrist
+debug: CXXFLAGS += -DDEBUG -g
+debug: DSMGA2
 
 
 DSMGA2: $(OBJ1)
