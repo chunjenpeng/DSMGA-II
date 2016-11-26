@@ -33,6 +33,8 @@ OBJ2 = $(addsuffix .o, $(basename $(SRC2)))
 OBJ3 = $(addsuffix .o, $(basename $(SRC3)))
 
 all: DSMGA2 sweep genZobrist
+debug: CXXFLAGS += -DDEBUG -g
+debug: DSMGA2
 
 
 DSMGA2: $(OBJ1)
