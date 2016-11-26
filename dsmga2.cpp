@@ -16,7 +16,7 @@
 
 #include <iomanip>
 using namespace std;
-#define DEBUG
+//#define DEBUG
 
 DSMGA2::DSMGA2 (int n_ell, int n_nInitial, int n_maxGen, int n_maxFe, int fffff) {
 
@@ -160,12 +160,19 @@ bool DSMGA2::foundOptima () {
 
 
 void DSMGA2::showStatistics () {
-
+    #ifndef DEBUG 
     printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f \n ",
             generation, stFitness.getMax (), stFitness.getMean (),
             stFitness.getMin ());
+    #endif
+    #ifdef DEBUG 
+    printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f nfe:%d\n",
+            generation, stFitness.getMax (), stFitness.getMean (),
+            stFitness.getMin (), Chromosome::nfe);
+    #endif
     fflush(NULL);
 }
+
 
 
 
@@ -355,6 +362,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         for(int i = 0; i < trial.getLength(); i++)
             cout << trial.getVal(i);
         cout << endl;
+        cout << "nfe:" << Chromosome::nfe << ", lsnfe:" << Chromosome::lsnfe << ", hit:" << Chromosome::hit << endl;
         cin.sync();
         cin.get();
         #endif
