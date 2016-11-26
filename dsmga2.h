@@ -97,7 +97,7 @@ public:
     vector< pair< list<int>, double > > *sortedMasks;
     //map< list<int>, double > sortedMasks; //?is mask small enough to use map
     void generateRestMask( const list<int> &, vector<int> & );
-    void printPopulation();
+    void printPopulation() const;
     void printMaskScore( const pair< list<int>, double >& );
     void printMask( const list<int> & );
     bool maskExist( const list<int> & mask );
@@ -106,7 +106,12 @@ public:
     double DaviesBouldin_index( const list<int>& );
     double Dunn_index( const list<int>& );
     double silhouette_coefficient( const list<int>& );
-    void sortMasks();
+    void sortMasks(const list<int>&, vector< pair< list<int>, double > >& );
+    
+    // for shouldTerminate
+    bool converged();
+    double lastMax, lastMean, lastMin;
+    int convergeCount;
 
 };
 
