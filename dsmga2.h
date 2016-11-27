@@ -94,19 +94,25 @@ public:
     size_t findSize(Chromosome&, list<int>&, Chromosome&) const;
 
     //2016-11-11
-    vector< pair< list<int>, double > > *sortedMasks;
-    //map< list<int>, double > sortedMasks; //?is mask small enough to use map
-    void generateRestMask( const list<int> &, vector<int> & );
-    void printPopulation();
+    void printPopulation(void) const;
     void printMaskScore( const pair< list<int>, double >& );
     void printMask( const list<int> & );
-    bool maskExist( const list<int> & mask );
+
+    //vector< pair< list<int>, double > > *sortedMasks;
+    //map< list<int>, double > sortedMasks; //?is mask small enough to use map
+    //bool maskExist( const list<int> & mask );
+
+    void sortMasks(list<int>&, vector< pair< list<int>, double > >&);
     double calculateScore( const list<int>& );
+    void generateRestMask( const list<int> &, vector<int> & );
     double averageEdge( const list<int>& );
     double DaviesBouldin_index( const list<int>& );
     double Dunn_index( const list<int>& );
     double silhouette_coefficient( const list<int>& );
-    void sortMasks();
+
+    bool converged();
+    double lastMax, lastMean, lastMin;
+    int convergeCount;
 
 };
 
