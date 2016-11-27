@@ -180,6 +180,7 @@ bool DSMGA2::foundOptima () {
 
 
 void DSMGA2::showStatistics () {
+    /*
 #ifndef DEUBG 
     printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f \n",
             generation, stFitness.getMax (), stFitness.getMean (),
@@ -190,6 +191,10 @@ void DSMGA2::showStatistics () {
             generation, stFitness.getMax (), stFitness.getMean (),
             stFitness.getMin (), Chromosome::nfe);
 #endif
+    */
+    printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f nfe:%d\n ",
+            generation, stFitness.getMax (), stFitness.getMean (),
+            stFitness.getMin (), Chromosome::nfe);
     fflush(NULL);
 }
 
@@ -300,9 +305,6 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
     //2016-11-11 
     sortMasks( mask, sortedMasks );
     for( pair< list<int>, double > p : sortedMasks ){
-        #ifdef DEBUG1
-        printMaskScore(p);
-        #endif
         sMask = p.first;
         
         Chromosome trial(ell);
@@ -313,7 +315,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         }
     
         if (isInP(trial)){
-            #ifdef DEBUG
+            #ifdef DEBUG1
             printMask(sMask);
             cout << " isInP\n\n";
             #endif
@@ -340,8 +342,8 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
     
         //2016-10-21
         //if (trial.getFitness() > ch.getFitness()) {
-        if (trial.getFitness() > ch.getFitness() - EPSILON) {
         //if (trial.getFitness() >= ch.getFitness()) {
+        if (trial.getFitness() > ch.getFitness() - EPSILON) {
             pHash.erase(ch.getKey());
             pHash[trial.getKey()] = trial.getFitness();
 
@@ -375,7 +377,7 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
 
     if(mask.size() == 0) return;
     bool taken = restrictedMixing(ch, mask);
-
+        
     EQ = true;
     if (taken) {
 
@@ -389,6 +391,8 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
                 backMixing(ch, mask, population[orderN[i]]);
         }
     }
+    
+    
 }
 
 size_t DSMGA2::findSize(Chromosome& ch, list<int>& mask) const {
@@ -519,14 +523,17 @@ double DSMGA2::DaviesBouldin_index( const list<int> &mask ) {
     for (auto it = mask.begin(); it != mask.end(); ++it) {
         for ( auto it1 = mask.begin(); it1 != mask.end(); ++it1 ) {
             if ( *it != *it1 ) 
-                S[*it] += graph( *it, *it1 );
+                S[*it] += 1-graph( *it, *it1 );
+                //cout << *it << "-" << *it1 << ":" << graph( *it, *it1 ) << endl;
             /*if ( generation == 2 ) {
                 cout << *it << "-" << *it1 << ":" << graph( *it, *it1 ) << endl;
                 cin.sync();
                 cin.get();
             }*/
         }
-        S[*it] = ( fabs(S[*it]) < EPSILON) ? 0 : S[*it] /= mask.size();
+        //cout << mask.size() << "(" << *it << "):" << S[*it] << "/";
+        S[*it] = (fabs(S[*it]) < EPSILON) ? 0 : S[*it] /= (mask.size()-1);
+        //cout << S[*it] << endl;
     }
 
     /*
@@ -542,9 +549,10 @@ double DSMGA2::DaviesBouldin_index( const list<int> &mask ) {
     double DB = -INF;
     for (auto i = mask.begin(); i != mask.end(); ++i) {
         for (auto j = rest.begin(); j != rest.end(); ++j) {
-            double Mij = graph( *i, *j );
+            double Mij = (1-graph( *i, *j ));
             //double Rij = (S[*i] + S[*j])/Mij;
-            //double Rij = ( fabs(Mij) < EPSILON ) ? log(S[*i]) : log(S[*i]) - log(Mij);
+            if(Mij < 0) printf("M%d-%d:%f", *i, *j, Mij); 
+            //double Rij = ( fabs(Mij - 1) < EPSILON ) ? log(S[*i]) - log(Mij) : log(S[*i]) + log(Mij);
             double Rij = ( fabs(Mij) < EPSILON ) ? S[*i] : S[*i]/Mij;
             DB = ( Rij > DB ) ? Rij : DB;
         }
@@ -585,7 +593,7 @@ void DSMGA2::sortMasks( list<int>& mask, vector< pair< list<int>, double > >& so
             if (fabs(left.second-right.second)<EPSILON) // float equal comparison
                 return left.first.size() < right.first.size(); // favor small mask when tie
             else
-                return left.second > right.second;
+                return left.second < right.second; // favor small DB index
         });
     
 #ifdef DEBUG 
