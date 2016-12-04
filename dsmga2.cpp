@@ -142,7 +142,7 @@ bool DSMGA2::converged() {
     lastMean = stFitness.getMean();
     lastMin = stFitness.getMin();
     
-    return (convergeCount > 50) ? true : false;
+    return (convergeCount > 100) ? true : false;
 }
 
 bool DSMGA2::shouldTerminate () {
@@ -325,6 +325,33 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         #ifdef DEBUG
         cout << "Try Mask:";
         printMaskScore(p);
+        /*
+        printf("%11.6f before : ", ch.getFitness());
+        for(int i = 0; i < ch.getLength(); i++)
+            cout << ch.getVal(i);
+        cout << endl;
+    
+        printf("%11.6f after  : ", trial.getFitness());
+        for(int i = 0; i < trial.getLength(); i++)
+            cout << trial.getVal(i);
+        cout << endl;
+        */
+        cout << "nfe:" << Chromosome::nfe << ", lsnfe:" << Chromosome::lsnfe << ", hit:" << Chromosome::hit << endl;
+        //cin.sync();
+        //cin.get();
+        #endif
+    
+        //2016-10-21
+        //if (trial.getFitness() > ch.getFitness()) {
+        //if (trial.getFitness() >= ch.getFitness()) {
+        if (trial.getFitness() > ch.getFitness() - EPSILON) {
+            pHash.erase(ch.getKey());
+            pHash[trial.getKey()] = trial.getFitness();
+#ifdef DEBUG 
+        for (auto it = sortedMasks.begin(); it != sortedMasks.end(); ++it )
+            printMaskScore( *it );
+        cout << "\nTaken Mask:";
+        printMask(sMask);
 
         printf("%11.6f before : ", ch.getFitness());
         for(int i = 0; i < ch.getLength(); i++)
@@ -338,14 +365,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         cout << "nfe:" << Chromosome::nfe << ", lsnfe:" << Chromosome::lsnfe << ", hit:" << Chromosome::hit << endl;
         cin.sync();
         cin.get();
-        #endif
-    
-        //2016-10-21
-        //if (trial.getFitness() > ch.getFitness()) {
-        //if (trial.getFitness() >= ch.getFitness()) {
-        if (trial.getFitness() > ch.getFitness() - EPSILON) {
-            pHash.erase(ch.getKey());
-            pHash[trial.getKey()] = trial.getFitness();
+#endif
 
             taken = true;
             ch = trial;
@@ -357,7 +377,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
     if (sMask.size() != 0) {
         mask = sMask;
     }
-
+    
     return taken;
 
 }
@@ -596,12 +616,6 @@ void DSMGA2::sortMasks( list<int>& mask, vector< pair< list<int>, double > >& so
                 return left.second < right.second; // favor small DB index
         });
     
-#ifdef DEBUG 
-    for (auto it = sortedMasks.begin(); it != sortedMasks.end(); ++it )
-        printMaskScore( *it );
-    cin.sync();
-    cin.get();
-#endif
 }
 
 void DSMGA2::mixing() {
@@ -670,6 +684,10 @@ void DSMGA2::buildGraph() {
 
             double linkage;
             linkage = computeMI(p00,p01,p10,p11);
+            //printf(" MI: (%2d-%2d) : %f\n", i, j, linkage);
+            //DMC
+            //linkage = DMC(p00, p01, p10, p11);
+            //printf("DMC: (%2d-%2d) : %f\n", i, j, linkage);
             graph.write(i,j,linkage);
         }
     }
@@ -677,6 +695,12 @@ void DSMGA2::buildGraph() {
 
     delete []one;
 
+}
+
+double DSMGA2::DMC (double p00, double p01, double p10, double p11) {
+    double a00 = p00*p11;
+    double a01 = p01*p10;
+    return (a00 > a01) ? (a00 - a01) : (a01 - a00);
 }
 
 // from 1 to ell, pick by max edge

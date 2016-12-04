@@ -109,6 +109,7 @@ public:
     double DaviesBouldin_index( const list<int>& );
     double Dunn_index( const list<int>& );
     double silhouette_coefficient( const list<int>& );
+    double DMC(double, double, double, double);
 
     bool converged();
     double lastMax, lastMean, lastMin;
