@@ -10,6 +10,7 @@
 
 #include <utility>
 #include <list>
+#include <map>
 #include "chromosome.h"
 #include "statistics.h"
 #include "trimatrix.h"
@@ -97,6 +98,7 @@ public:
     void printPopulation(void) const;
     void printMaskScore( const pair< list<int>, double >& );
     void printMask( const list<int> & );
+    void populationMaskStatus( const list<int>& );
 
     //vector< pair< list<int>, double > > *sortedMasks;
     //map< list<int>, double > sortedMasks; //?is mask small enough to use map
@@ -115,6 +117,15 @@ public:
     double lastMax, lastMean, lastMin;
     int convergeCount;
 
+    //2016-12-06
+    int RM_succeed, RM_failed, BM_succeed, BM_failed;
+    void populationMaskStatus( const Chromosome&, const list<int>& );
+    bool matchPattern(Chromosome& source, list<int>& mask, Chromosome& des);
+
+    map<string, int> succeedPattern, failedPattern;
+    void printMapOrder(map<string, int>& m);
+    void countSucceed(list<int>& mask, Chromosome& des);
+    void countFailed(list<int>& mask, Chromosome& des);
 };
 
 

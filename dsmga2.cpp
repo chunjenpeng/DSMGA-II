@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iterator>
 #include <cmath>
+#include <map>
 
 #include <iostream>
 #include "chromosome.h"
@@ -93,6 +94,7 @@ int DSMGA2::doIt (bool output) {
     generation = 0;
     lastMax = lastMean = lastMin = -INF;
     convergeCount = 0;
+    RM_failed = RM_succeed = BM_failed = BM_succeed = 0;
 
     while (!shouldTerminate ()) {
         oneRun (output);
@@ -260,12 +262,16 @@ void DSMGA2::backMixing(Chromosome& source, list<int>& mask, Chromosome& des) {
         trial.setVal(*it, source.getVal(*it));
 
     if (trial.getFitness() > des.getFitness()) {
+
+        countSucceed(mask, des);
+
         pHash.erase(des.getKey());
         pHash[trial.getKey()] = trial.getFitness();
         des = trial;
         return;
     }
 
+    countFailed(mask, des);
 }
 
 void DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
@@ -276,6 +282,9 @@ void DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
         trial.setVal(*it, source.getVal(*it));
 
     if (trial.getFitness() > des.getFitness()) {
+
+        countSucceed(mask, des);
+
         pHash.erase(des.getKey());
         pHash[trial.getKey()] = trial.getFitness();
 
@@ -287,6 +296,9 @@ void DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
     //2016-10-21
     if (trial.getFitness() > des.getFitness() - EPSILON) {
     //if (trial.getFitness() >= des.getFitness()) {
+
+        countSucceed(mask, des);
+
         pHash.erase(des.getKey());
         pHash[trial.getKey()] = trial.getFitness();
 
@@ -294,6 +306,7 @@ void DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
         return;
     }
 
+    countFailed(mask, des);
 }
 
 bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
@@ -314,58 +327,46 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
             trial.flip(*it);
         }
     
+        #ifdef DEBUG
+        cout << " Try Mask:";
+        printMaskScore(p);
+        #endif
         if (isInP(trial)){
-            #ifdef DEBUG1
+            #ifdef DEBUG
             printMask(sMask);
-            cout << " isInP\n\n";
+            cout << "isInP";
             #endif
             break;
         }
     
-        #ifdef DEBUG
-        cout << "Try Mask:";
-        printMaskScore(p);
-        /*
-        printf("%11.6f before : ", ch.getFitness());
-        for(int i = 0; i < ch.getLength(); i++)
-            cout << ch.getVal(i);
-        cout << endl;
-    
-        printf("%11.6f after  : ", trial.getFitness());
-        for(int i = 0; i < trial.getLength(); i++)
-            cout << trial.getVal(i);
-        cout << endl;
-        */
-        cout << "nfe:" << Chromosome::nfe << ", lsnfe:" << Chromosome::lsnfe << ", hit:" << Chromosome::hit << endl;
-        //cin.sync();
-        //cin.get();
-        #endif
-    
         //2016-10-21
         //if (trial.getFitness() > ch.getFitness()) {
         //if (trial.getFitness() >= ch.getFitness()) {
+        ++RM_failed;
         if (trial.getFitness() > ch.getFitness() - EPSILON) {
+            #ifdef DEBUG 
+            for (auto it = sortedMasks.begin(); it != sortedMasks.end(); ++it )
+                printMaskScore( *it );
+                cout << "\nTaken Mask:";
+                printMask(sMask);
+                cout << endl;
+
+                printf("%11.6f before : ", ch.getFitness());
+                for(int i = 0; i < ch.getLength(); i++)
+                    cout << ch.getVal(i);
+                cout << endl;
+    
+                printf("%11.6f after  : ", trial.getFitness());
+                for(int i = 0; i < trial.getLength(); i++)
+                    cout << trial.getVal(i);
+                cout << endl;
+
+                --RM_failed;
+                ++RM_succeed;
+            #endif
+
             pHash.erase(ch.getKey());
             pHash[trial.getKey()] = trial.getFitness();
-#ifdef DEBUG 
-        for (auto it = sortedMasks.begin(); it != sortedMasks.end(); ++it )
-            printMaskScore( *it );
-        cout << "\nTaken Mask:";
-        printMask(sMask);
-
-        printf("%11.6f before : ", ch.getFitness());
-        for(int i = 0; i < ch.getLength(); i++)
-            cout << ch.getVal(i);
-        cout << endl;
-    
-        printf("%11.6f after  : ", trial.getFitness());
-        for(int i = 0; i < trial.getLength(); i++)
-            cout << trial.getVal(i);
-        cout << endl;
-        cout << "nfe:" << Chromosome::nfe << ", lsnfe:" << Chromosome::lsnfe << ", hit:" << Chromosome::hit << endl;
-        cin.sync();
-        cin.get();
-#endif
 
             taken = true;
             ch = trial;
@@ -382,7 +383,70 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
 
 }
 
+void DSMGA2::populationMaskStatus( const Chromosome& ch, const list<int>& mask ){
+    
+    for (const int& i : mask){
+        int allel = (ch.getVal(i) == 1) ? 0 : 1;
+        cout << allel;
+    }
+    cout << " -> ";
+    for (const int& i : mask){
+        cout << ch.getVal(i);
+    }
+    cout << endl;
+
+    map<string, int> counter;
+    for (int n = 0; n < nCurrent; ++n) {
+        string pattern;
+        for (const int& i : mask){
+            pattern += to_string(population[n].getVal(i));
+        }
+        ++counter[pattern];
+    }
+    for (auto const& it : counter) 
+        cout << it.first << ":" << it.second << endl;
+}
+
+bool DSMGA2::matchPattern(Chromosome& source, list<int>& mask, Chromosome& des) {
+    for (auto const& i : mask) {
+        if (source.getVal(i) != des.getVal(i))
+            return false;
+    }
+    return true;
+}
+
+void DSMGA2::countSucceed(list<int>& mask, Chromosome& des) {
+    string pattern = "";
+    for (const int& i : mask){
+        pattern += to_string(des.getVal(i));
+    }
+    ++succeedPattern[pattern];
+    ++BM_succeed;
+}
+
+void DSMGA2::countFailed(list<int>& mask, Chromosome& des) {
+    string pattern = "";
+    for (const int& i : mask){
+        pattern += to_string(des.getVal(i));
+    }
+    ++failedPattern[pattern];
+    ++BM_failed;
+}
+
+void DSMGA2::printMapOrder(map<string, int>& m){
+    vector< pair<string,int> > mapcopy(m.begin(), m.end());
+    sort( mapcopy.begin(), mapcopy.end(),
+        [](const pair< string, int > &left, const pair< string, int > &right){
+                return left.second > right.second; // favor small DB index
+        });
+    for (const auto& it : mapcopy)
+        cout << it.first << ":" << it.second << endl;
+}
+
 void DSMGA2::restrictedMixing(Chromosome& ch) {
+    RM_failed = RM_succeed = BM_failed = BM_succeed = 0;
+    succeedPattern.clear();
+    failedPattern.clear();
 
     int r = myRand.uniformInt(0, ell-1);
     list<int> mask = masks[r];
@@ -400,7 +464,10 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
         
     EQ = true;
     if (taken) {
-
+#ifdef DEBUG
+        cout << "\nBefore BM:" << endl;
+        populationMaskStatus(ch, mask);
+#endif
         genOrderN();
 
         for (int i=0; i<nCurrent; ++i) {
@@ -410,9 +477,25 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
             else
                 backMixing(ch, mask, population[orderN[i]]);
         }
+#ifdef DEBUG
+        cout << "\nsucceedPattern:" << endl;
+        printMapOrder(succeedPattern);
+        //for (auto const& it : succeedPattern) 
+        //    cout << it.first << ":" << it.second << endl;
+
+        cout << "\nfailedPattern:" << endl;
+        printMapOrder(failedPattern);
+        //for (auto const& it : failedPattern) 
+        //    cout << it.first << ":" << it.second << endl;
+        cout << "\nAfter BM:" << endl;
+        populationMaskStatus(ch, mask);
+
+        printf("\nlsnfe:%d, nfe:%d, RM failed:%d, RM success:%d, BM failed:%d, BM success:%d\n"
+            ,Chromosome::lsnfe, Chromosome::nfe, RM_failed, RM_succeed, BM_failed, BM_succeed );
+        cin.sync();
+        cin.get();
+#endif
     }
-    
-    
 }
 
 size_t DSMGA2::findSize(Chromosome& ch, list<int>& mask) const {
@@ -477,7 +560,7 @@ void DSMGA2::printMask( const list<int> &mask ){
 void DSMGA2::printMaskScore( const pair< list<int>, double > &p ){
     list<int> mask = p.first;
     double score = p.second;
-    printf("%15.6f : [", score);
+    printf("%.6f : [", score);
     for( const auto &m : mask ){
         printf("%d-", m);
     }
@@ -705,7 +788,6 @@ double DSMGA2::DMC (double p00, double p01, double p10, double p11) {
 
 // from 1 to ell, pick by max edge
 void DSMGA2::findClique(int startNode, list<int>& result) {
-
 
     result.clear();
 
