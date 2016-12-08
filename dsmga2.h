@@ -103,7 +103,20 @@ public:
     void printMapOrder(map<string, int>& m);
     void countSucceed(list<int>& mask, Chromosome& des, bool evaluated);
     void countFailed(list<int>& mask, Chromosome& des, bool evaluated);
+    
+    vector< vector< pair<int, int> > > maskPatterns; 
+    void printMaskPatterns(void);
+    multimap< int, int > patternMap;
+    void saveMaskPattern(const Chromosome& ch, list<int>& mask);
 
+    list< map<int, int> > mergedPatterns;
+    void printMergedPatterns(void);
+    void printPattern(const map<int, int>& pattern);
+    void mergeMasks();
+    bool contradictPatterns( const map<int, int>& mergedPattern, 
+                             const vector< pair<int, int> >& pattern);
+    void merge( map<int, int>& mergedPattern, const vector< pair<int, int> >& pattern);
+    bool inMergedPatterns( const map<int, int>& mergedPattern );
 };
 
 

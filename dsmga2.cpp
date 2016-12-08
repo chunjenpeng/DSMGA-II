@@ -297,12 +297,133 @@ void DSMGA2::printMapOrder(map<string, int>& m){
     vector< pair<string,int> > mapcopy(m.begin(), m.end());
     sort( mapcopy.begin(), mapcopy.end(),
         [](const pair< string, int > &left, const pair< string, int > &right){
-                return left.second > right.second; // favor small DB index
+                return left.second > right.second;
         });
     for (const auto& it : mapcopy)
         cout << it.first << ":" << it.second << endl;
 }
 
+void DSMGA2::saveMaskPattern( const Chromosome& ch, list<int>& mask){
+    vector< pair<int, int> > pattern;
+    for (const int& i : mask )
+        pattern.push_back( make_pair(i, ch.getVal(i)));
+    sort( pattern.begin(), pattern.end(),
+        [](const pair< int, int > &left, const pair< int, int > &right){
+                return left.first < right.first;
+        });
+    maskPatterns.push_back( pattern );
+    
+    //for patternMap
+    for (const int& i : mask )
+        patternMap.insert( make_pair(i, ch.getVal(i)) );
+}
+/*
+void DSMGA2::printMaskPatterns(void) {
+    for( const auto& pattern : maskPatterns ){
+        auto it = pattern.begin();
+        for( int i = 0; i < ell; ++i ){
+            if( i != it->first ) 
+                cout << "."; 
+            else{
+                cout << it->second;
+                if( ++it == pattern.end() )
+                    it = pattern.begin();
+            }
+        }
+        cout << endl;
+    }
+}
+*/
+void DSMGA2::printMaskPatterns(void) {
+    map<int, int> m;
+    for( const auto& pattern : maskPatterns ){
+        m.clear();
+        for( const auto& pair : pattern ){
+            m.insert( pair );
+        }
+        printPattern( m );
+    }
+}
+
+void DSMGA2::printMergedPatterns(void) {
+    for( const auto& pattern : mergedPatterns ){
+        printPattern( pattern );
+    }
+}
+
+void DSMGA2::printPattern(const map<int, int>& pattern) {
+    for( int i = 0; i < ell; ++i ){
+        if( pattern.find(i) != pattern.end() )
+            cout << pattern.at(i);
+        else
+            cout << "."; 
+    }
+    cout << endl;
+}
+    
+void DSMGA2::merge( map<int, int>& mergedPattern,
+                    const vector< pair<int, int> >& pattern ) { 
+    //map<int, int> m;
+    //for( const auto& pair : pattern ){
+    //    m.insert( pair );
+    //}
+    //printf("pattern:\n");
+    //printPattern( m );
+    for ( const auto& pair : pattern ) {
+        mergedPattern[pair.first] = pair.second;
+    }
+}
+
+bool DSMGA2::contradictPatterns( const map<int, int>& mergedPattern, 
+                                 const vector< pair<int, int> >& pattern ) { 
+    for ( const auto& pair : pattern ) {
+        int pos = pair.first;
+        int allel = pair.second;
+        if( mergedPattern.find(pos) != mergedPattern.end() )
+            if (mergedPattern.at(pos) != allel)
+                return true;
+    }
+    return false;
+}
+
+bool DSMGA2::inMergedPatterns( const map<int, int>& mergedPattern ) {
+    for (const auto& p : mergedPatterns)
+        if( p == mergedPattern )
+            return true;
+    return false;
+}
+
+void DSMGA2::mergeMasks() {
+    mergedPatterns.clear();
+    map<int, int> p;
+    mergedPatterns.push_back( p );
+
+    for( const auto& pattern : maskPatterns ){
+        for( auto it = mergedPatterns.begin(); it != mergedPatterns.end(); it++) {
+            map<int, int>& mergedPattern = *it;
+            if ( contradictPatterns( mergedPattern, pattern ) ) {
+                //printf("contradict Patterns\n");
+                map<int, int> newMergedPattern( mergedPattern );
+                merge( newMergedPattern, pattern );
+                if (! inMergedPatterns( newMergedPattern ) ) {
+                    mergedPatterns.push_back( newMergedPattern );
+                    //printf("newMergedPattern inserted:\n");
+                    //printPattern( newMergedPattern );
+                    //cin.sync();
+                    //cin.get();
+                }
+            }
+            else {
+                //mHash.erase(mergedPattern.getKey());
+                merge( mergedPattern, pattern );
+                //printPattern( mergedPattern );
+                //mHash[mergedPattern.getKey()] = mergedPattern;
+                //cin.sync();
+                //cin.get();
+            }
+        }
+    }
+}
 
 void DSMGA2::restrictedMixing(Chromosome& ch) {
 
@@ -325,6 +446,8 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
 
 
     bool taken = restrictedMixing(ch, mask);
+    if( taken) 
+        saveMaskPattern( ch, mask );
 
     EQ = true;
     if (taken) {
@@ -362,7 +485,6 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
         cin.get();
 #endif
     }
-
 }
 
 void DSMGA2::backMixing(Chromosome& source, list<int>& mask, Chromosome& des) {
@@ -563,10 +685,22 @@ void DSMGA2::mixing() {
     for (int k=0; k<repeat; ++k) {
 
         genOrderN();
+
+        maskPatterns.clear();
+
         for (int i=0; i<nCurrent; ++i) {
             restrictedMixing(population[orderN[i]]);
             if (Chromosome::hit) break;
         }
+
+        printf("maskPatterns:\n");
+        printMaskPatterns();
+        mergeMasks();
+        printf("mergedPatterns:\n");
+        printMergedPatterns();
+        cin.sync();
+        cin.get();
+        
         if (Chromosome::hit) break;
     }
 
