@@ -101,8 +101,8 @@ public:
     int RM_succeed, RM_failed, BM_succeed, BM_failed;
     map<string, int> succeedPattern, failedPattern;
     void printMapOrder(map<string, int>& m);
-    void countSucceed(list<int>& mask, Chromosome& des);
-    void countFailed(list<int>& mask, Chromosome& des);
+    void countSucceed(list<int>& mask, Chromosome& des, bool evaluated);
+    void countFailed(list<int>& mask, Chromosome& des, bool evaluated);
 
 };
 
