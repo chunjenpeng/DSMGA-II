@@ -104,8 +104,9 @@ public:
     //map< list<int>, double > sortedMasks; //?is mask small enough to use map
     //bool maskExist( const list<int> & mask );
 
-    void sortMasks(list<int>&, vector< pair< list<int>, double > >&);
-    double calculateScore( const list<int>& );
+    void sortMasks(const Chromosome&, list<int>&, vector< pair< list<int>, double > >&);
+    double clusterScore( const list<int>& );
+    double BMestimation( const Chromosome&, const list<int>& );
     void generateRestMask( const list<int> &, vector<int> & );
     double averageEdge( const list<int>& );
     double DaviesBouldin_index( const list<int>& );

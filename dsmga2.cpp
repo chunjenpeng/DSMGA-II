@@ -9,6 +9,7 @@
 #include <iterator>
 #include <cmath>
 #include <map>
+#include <unordered_set>
 
 #include <iostream>
 #include "chromosome.h"
@@ -194,9 +195,12 @@ void DSMGA2::showStatistics () {
             stFitness.getMin (), Chromosome::nfe);
 #endif
     */
-    printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f nfe:%d\n ",
+    printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f nfe:%d\n",
             generation, stFitness.getMax (), stFitness.getMean (),
             stFitness.getMin (), Chromosome::nfe);
+    printf("lsnfe:%d, nfe:%d, RM failed:%d, RM success:%d, BM failed:%d, BM success:%d\n"
+        ,Chromosome::lsnfe, Chromosome::nfe, RM_failed, RM_succeed, BM_failed, BM_succeed );
+
     fflush(NULL);
 }
 
@@ -316,7 +320,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
     vector< pair< list<int>, double > > sortedMasks; 
 
     //2016-11-11 
-    sortMasks( mask, sortedMasks );
+    sortMasks( ch, mask, sortedMasks );
     for( pair< list<int>, double > p : sortedMasks ){
         sMask = p.first;
         
@@ -360,10 +364,10 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
                 for(int i = 0; i < trial.getLength(); i++)
                     cout << trial.getVal(i);
                 cout << endl;
+            #endif
 
                 --RM_failed;
                 ++RM_succeed;
-            #endif
 
             pHash.erase(ch.getKey());
             pHash[trial.getKey()] = trial.getFitness();
@@ -381,6 +385,34 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
     
     return taken;
 
+}
+
+double DSMGA2::BMestimation( const Chromosome& ch, const list<int>& mask ){
+    double occur = 0;
+    string maskPattern;
+    for (const int& i : mask) 
+        maskPattern += to_string( ch.getVal(i) );
+
+    map<string, int> counter;
+    for (int n = 0; n < nCurrent; ++n) {
+        string pattern;
+        for (const int& i : mask){
+            pattern += to_string(population[n].getVal(i));
+        }
+        ++counter[pattern];
+    }
+
+    vector< pair<string,int> > mapcopy(counter.begin(), counter.end());
+    sort( mapcopy.begin(), mapcopy.end(),
+        [](const pair< string, int > &left, const pair< string, int > &right){
+                return left.second < right.second;
+        });
+
+    for (const auto& it : mapcopy) {
+        occur += it.second;
+        if ( it.first == maskPattern ) break;
+    }
+    return occur/nCurrent;
 }
 
 void DSMGA2::populationMaskStatus( const Chromosome& ch, const list<int>& mask ){
@@ -403,8 +435,7 @@ void DSMGA2::populationMaskStatus( const Chromosome& ch, const list<int>& mask )
         }
         ++counter[pattern];
     }
-    for (auto const& it : counter) 
-        cout << it.first << ":" << it.second << endl;
+    printMapOrder(counter);
 }
 
 bool DSMGA2::matchPattern(Chromosome& source, list<int>& mask, Chromosome& des) {
@@ -437,14 +468,14 @@ void DSMGA2::printMapOrder(map<string, int>& m){
     vector< pair<string,int> > mapcopy(m.begin(), m.end());
     sort( mapcopy.begin(), mapcopy.end(),
         [](const pair< string, int > &left, const pair< string, int > &right){
-                return left.second > right.second; // favor small DB index
+                return left.second > right.second;
         });
     for (const auto& it : mapcopy)
         cout << it.first << ":" << it.second << endl;
 }
 
 void DSMGA2::restrictedMixing(Chromosome& ch) {
-    RM_failed = RM_succeed = BM_failed = BM_succeed = 0;
+    //BM_failed = BM_succeed = 0;
     succeedPattern.clear();
     failedPattern.clear();
 
@@ -465,7 +496,7 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
     EQ = true;
     if (taken) {
 #ifdef DEBUG
-        cout << "\nBefore BM:" << endl;
+        cout << "\nBefore BM:" << BMestimation(ch, mask) << endl;
         populationMaskStatus(ch, mask);
 #endif
         genOrderN();
@@ -487,7 +518,7 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
         printMapOrder(failedPattern);
         //for (auto const& it : failedPattern) 
         //    cout << it.first << ":" << it.second << endl;
-        cout << "\nAfter BM:" << endl;
+        cout << "\nAfter BM:" << BMestimation(ch, mask) << endl;
         populationMaskStatus(ch, mask);
 
         printf("\nlsnfe:%d, nfe:%d, RM failed:%d, RM success:%d, BM failed:%d, BM success:%d\n"
@@ -674,19 +705,28 @@ double DSMGA2::silhouette_coefficient( const list<int> &mask ) {
     return score;
 }
 
-double DSMGA2::calculateScore( const list<int> &mask ) {
+double DSMGA2::clusterScore( const list<int> &mask ) {
     //return averageEdge( mask );
     return DaviesBouldin_index( mask );
     //return Dunn_index( mask );
     //return silhouette_coefficient( mask );
 }
 
-void DSMGA2::sortMasks( list<int>& mask, vector< pair< list<int>, double > >& sortedMasks) {
+void DSMGA2::sortMasks( const Chromosome& ch, list<int>& mask, 
+                        vector< pair< list<int>, double > >& sortedMasks) {
 
     sortedMasks.clear();
 
     while (mask.size() > 0) {
-        double score = calculateScore(mask);
+        double RMscore = clusterScore(mask);
+        double BMscore = BMestimation( ch, mask );
+        double score = BMscore/RMscore;
+#ifdef DEBUG
+        printf("RM: %.6f, BM: %.6f, score = %8.6f", RMscore, BMscore, score);
+        printMask(mask);
+        cout << endl;
+#endif
+
         sortedMasks.push_back( make_pair( mask, score) );
         mask.pop_back();
     }
@@ -696,7 +736,7 @@ void DSMGA2::sortMasks( list<int>& mask, vector< pair< list<int>, double > >& so
             if (fabs(left.second-right.second)<EPSILON) // float equal comparison
                 return left.first.size() < right.first.size(); // favor small mask when tie
             else
-                return left.second < right.second; // favor small DB index
+                return left.second > right.second; // favor small DB index
         });
     
 }
