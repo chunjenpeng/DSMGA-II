@@ -9,6 +9,7 @@
 #define _DSMGA2_H_
 
 #include <list>
+#include <map>
 #include "chromosome.h"
 #include "statistics.h"
 #include "trimatrix.h"
@@ -93,6 +94,16 @@ public:
     size_t findSize(Chromosome&, list<int>&, Chromosome&) const;
 
     void printPopulation() const;
+    void populationMaskStatus( const Chromosome&, const list<int>& );
+    bool matchPattern(Chromosome& source, list<int>& mask, Chromosome& des);
+    
+    //2016-12-06
+    int RM_succeed, RM_failed, BM_succeed, BM_failed;
+    map<string, int> succeedPattern, failedPattern;
+    void printMapOrder(map<string, int>& m);
+    void countSucceed(list<int>& mask, Chromosome& des);
+    void countFailed(list<int>& mask, Chromosome& des);
+
 };
 
 
