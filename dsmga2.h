@@ -104,19 +104,16 @@ public:
     void countSucceed(list<int>& mask, Chromosome& des, bool evaluated);
     void countFailed(list<int>& mask, Chromosome& des, bool evaluated);
     
-    vector< vector< pair<int, int> > > maskPatterns; 
-    void printMaskPatterns(void);
-    multimap< int, int > patternMap;
-    void saveMaskPattern(const Chromosome& ch, list<int>& mask);
-
-    list< map<int, int> > mergedPatterns;
-    void printMergedPatterns(void);
+    list< pair< double, map<int, int> > > patternList; 
+    void savePattern(const Chromosome& ch, list<int>& mask);
     void printPattern(const map<int, int>& pattern);
+
+    bool contradictPattern( const map<int, int>&, const map<int, int>&);
+    bool patternExists( const map<int, int>& pattern );
+    void merge( map<int, int>& mergedPattern, const map<int, int>& pattern);
+    double BMestimation( map<int, int>& pattern );
     void mergeMasks();
-    bool contradictPatterns( const map<int, int>& mergedPattern, 
-                             const vector< pair<int, int> >& pattern);
-    void merge( map<int, int>& mergedPattern, const vector< pair<int, int> >& pattern);
-    bool inMergedPatterns( const map<int, int>& mergedPattern );
+    void backMixingO(Chromosome& des);
 };
 
 

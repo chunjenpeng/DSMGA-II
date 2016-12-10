@@ -85,6 +85,12 @@ double Chromosome::getFitness () {
     else {
         fitness = evaluate();
         if (!hit && fitness > getMaxFitness()) {
+
+            printf("\n\n\n HIT!!\n");
+            for (int i=0; i<length; ++i)
+                printf("%d",getVal(i));
+            printf("\n\n\n");
+
             hit = true;
             hitnfe = nfe+lsnfe;
         }
