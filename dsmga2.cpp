@@ -265,9 +265,11 @@ void DSMGA2::backMixing(Chromosome& source, list<int>& mask, Chromosome& des) {
     for (list<int>::iterator it = mask.begin(); it != mask.end(); ++it)
         trial.setVal(*it, source.getVal(*it));
 
+    bool evaluated = trial.isEvaluated();
+
     if (trial.getFitness() > des.getFitness()) {
 
-        countSucceed(mask, des);
+        countSucceed(mask, des, evaluated);
 
         pHash.erase(des.getKey());
         pHash[trial.getKey()] = trial.getFitness();
@@ -275,7 +277,7 @@ void DSMGA2::backMixing(Chromosome& source, list<int>& mask, Chromosome& des) {
         return;
     }
 
-    countFailed(mask, des);
+    countFailed(mask, des, evaluated);
 }
 
 void DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
@@ -285,9 +287,11 @@ void DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
     for (list<int>::iterator it = mask.begin(); it != mask.end(); ++it)
         trial.setVal(*it, source.getVal(*it));
 
+    bool evaluated = trial.isEvaluated();
+
     if (trial.getFitness() > des.getFitness()) {
 
-        countSucceed(mask, des);
+        countSucceed(mask, des, evaluated);
 
         pHash.erase(des.getKey());
         pHash[trial.getKey()] = trial.getFitness();
@@ -301,7 +305,7 @@ void DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
     if (trial.getFitness() > des.getFitness() - EPSILON) {
     //if (trial.getFitness() >= des.getFitness()) {
 
-        countSucceed(mask, des);
+        countSucceed(mask, des, evaluated);
 
         pHash.erase(des.getKey());
         pHash[trial.getKey()] = trial.getFitness();
@@ -310,7 +314,7 @@ void DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
         return;
     }
 
-    countFailed(mask, des);
+    countFailed(mask, des, evaluated);
 }
 
 bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
@@ -446,22 +450,24 @@ bool DSMGA2::matchPattern(Chromosome& source, list<int>& mask, Chromosome& des) 
     return true;
 }
 
-void DSMGA2::countSucceed(list<int>& mask, Chromosome& des) {
-    string pattern = "";
+void DSMGA2::countSucceed(list<int>& mask, Chromosome& des, bool evaluated) {
+    string pattern;
     for (const int& i : mask){
         pattern += to_string(des.getVal(i));
     }
     ++succeedPattern[pattern];
-    ++BM_succeed;
+    if( !evaluated )
+        ++BM_succeed;
 }
 
-void DSMGA2::countFailed(list<int>& mask, Chromosome& des) {
-    string pattern = "";
+void DSMGA2::countFailed(list<int>& mask, Chromosome& des, bool evaluated) {
+    string pattern;
     for (const int& i : mask){
         pattern += to_string(des.getVal(i));
     }
     ++failedPattern[pattern];
-    ++BM_failed;
+    if( !evaluated )
+        ++BM_failed;
 }
 
 void DSMGA2::printMapOrder(map<string, int>& m){
