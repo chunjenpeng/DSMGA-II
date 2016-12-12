@@ -402,14 +402,13 @@ double DSMGA2::BMestimation( const Chromosome& ch, const list<int>& mask ){
         ++counter[pattern];
     }
 
-    vector< pair<string,int> > mapcopy(counter.begin(), counter.end());
-    sort( mapcopy.begin(), mapcopy.end(),
-        [](const pair< string, int > &left, const pair< string, int > &right){
-                return left.second < right.second;
-        });
+    //vector< pair<string,int> > mapcopy(counter.begin(), counter.end());
+    //sort( mapcopy.begin(), mapcopy.end(),
+    //    [](const pair< string, int > &left, const pair< string, int > &right){
+    //            return left.second < right.second;
+    //    });
 
     //Count ratio of succeedPattern and originalPattern in population
-    double occur = 0;
     string succeedPattern, originalPattern;
     for (const int& i : mask) { 
         int allel = ch.getVal(i);
@@ -417,18 +416,24 @@ double DSMGA2::BMestimation( const Chromosome& ch, const list<int>& mask ){
         succeedPattern += (allel == 0) ? "1" : "0";
     }
 
-    bool passOriginalPattern = false, passSucceedPattern = false;
-    for (const auto& it : mapcopy) {
-        if (it.first == succeedPattern) {
-            occur += it.second;
-            passSucceedPattern = true;
-        }
-        else if (it.first == originalPattern) {
-            occur += it.second;
-            passOriginalPattern = true;
-        }
-        if ( passOriginalPattern && passSucceedPattern ) break;
-    }
+    double occur = 0;
+    if (counter.find(originalPattern) != counter.end())
+        occur += counter[originalPattern];
+    if (counter.find(succeedPattern) != counter.end())
+        occur += counter[succeedPattern];
+
+    //bool passOriginalPattern = false, passSucceedPattern = false;
+    //for (const auto& it : mapcopy) {
+    //    if (it.first == succeedPattern) {
+    //        occur += it.second;
+    //        passSucceedPattern = true;
+    //    }
+    //    else if (it.first == originalPattern) {
+    //        occur += it.second;
+    //        passOriginalPattern = true;
+    //    }
+    //    if ( passOriginalPattern && passSucceedPattern ) break;
+    //}
     return occur/nCurrent;
 }
 
@@ -464,21 +469,25 @@ bool DSMGA2::matchPattern(Chromosome& source, list<int>& mask, Chromosome& des) 
 }
 
 void DSMGA2::countSucceed(list<int>& mask, Chromosome& des, bool evaluated) {
+#ifdef DEBUG
     string pattern;
     for (const int& i : mask){
         pattern += to_string(des.getVal(i));
     }
     ++succeedPattern[pattern];
+#endif
     if( !evaluated )
         ++BM_succeed;
 }
 
 void DSMGA2::countFailed(list<int>& mask, Chromosome& des, bool evaluated) {
+#ifdef DEBUG
     string pattern;
     for (const int& i : mask){
         pattern += to_string(des.getVal(i));
     }
     ++failedPattern[pattern];
+#endif
     if( !evaluated )
         ++BM_failed;
 }
@@ -494,9 +503,11 @@ void DSMGA2::printMapOrder(map<string, int>& m){
 }
 
 void DSMGA2::restrictedMixing(Chromosome& ch) {
-    //BM_failed = BM_succeed = 0;
+#ifdef DEBUG
+    BM_failed = BM_succeed = 0;
     succeedPattern.clear();
     failedPattern.clear();
+#endif
 
     int r = myRand.uniformInt(0, ell-1);
     list<int> mask = masks[r];
