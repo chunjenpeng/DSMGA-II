@@ -392,11 +392,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
 }
 
 double DSMGA2::BMestimation( const Chromosome& ch, const list<int>& mask ){
-    double occur = 0;
-    string maskPattern;
-    for (const int& i : mask) 
-        maskPattern += to_string( ch.getVal(i) );
-
+    //Count patterns in Population
     map<string, int> counter;
     for (int n = 0; n < nCurrent; ++n) {
         string pattern;
@@ -412,9 +408,26 @@ double DSMGA2::BMestimation( const Chromosome& ch, const list<int>& mask ){
                 return left.second < right.second;
         });
 
+    //Count ratio of succeedPattern and originalPattern in population
+    double occur = 0;
+    string succeedPattern, originalPattern;
+    for (const int& i : mask) { 
+        int allel = ch.getVal(i);
+        originalPattern += to_string(allel);
+        succeedPattern += (allel == 0) ? "1" : "0";
+    }
+
+    bool passOriginalPattern = false, passSucceedPattern = false;
     for (const auto& it : mapcopy) {
-        occur += it.second;
-        if ( it.first == maskPattern ) break;
+        if (it.first == succeedPattern) {
+            occur += it.second;
+            passSucceedPattern = true;
+        }
+        else if (it.first == originalPattern) {
+            occur += it.second;
+            passOriginalPattern = true;
+        }
+        if ( passOriginalPattern && passSucceedPattern ) break;
     }
     return occur/nCurrent;
 }
@@ -713,7 +726,7 @@ double DSMGA2::silhouette_coefficient( const list<int> &mask ) {
 
 double DSMGA2::clusterScore( const list<int> &mask ) {
     //return averageEdge( mask );
-    return DaviesBouldin_index( mask );
+    return 1.0/DaviesBouldin_index( mask );
     //return Dunn_index( mask );
     //return silhouette_coefficient( mask );
 }
@@ -726,14 +739,14 @@ void DSMGA2::sortMasks( const Chromosome& ch, list<int>& mask,
     while (mask.size() > 0) {
         double RMscore = clusterScore(mask);
         double BMscore = BMestimation( ch, mask );
-        double score = BMscore/RMscore;
+        double score = pow(RMscore, BMscore);
 #ifdef DEBUG
         printf("RM: %.6f, BM: %.6f, score = %8.6f", RMscore, BMscore, score);
         printMask(mask);
         cout << endl;
 #endif
 
-        sortedMasks.push_back( make_pair( mask, score) );
+        sortedMasks.push_back( make_pair(mask, score) );
         mask.pop_back();
     }
 
