@@ -402,13 +402,14 @@ double DSMGA2::BMestimation( const Chromosome& ch, const list<int>& mask ){
         ++counter[pattern];
     }
 
-    //vector< pair<string,int> > mapcopy(counter.begin(), counter.end());
-    //sort( mapcopy.begin(), mapcopy.end(),
-    //    [](const pair< string, int > &left, const pair< string, int > &right){
-    //            return left.second < right.second;
-    //    });
+    vector< pair<string,int> > mapcopy(counter.begin(), counter.end());
+    sort( mapcopy.begin(), mapcopy.end(),
+        [](const pair< string, int > &left, const pair< string, int > &right){
+                return left.second < right.second;
+        });
 
     //Count ratio of succeedPattern and originalPattern in population
+    double occur = 0;
     string succeedPattern, originalPattern;
     for (const int& i : mask) { 
         int allel = ch.getVal(i);
@@ -416,24 +417,18 @@ double DSMGA2::BMestimation( const Chromosome& ch, const list<int>& mask ){
         succeedPattern += (allel == 0) ? "1" : "0";
     }
 
-    double occur = 0;
-    if (counter.find(originalPattern) != counter.end())
-        occur += counter[originalPattern];
-    if (counter.find(succeedPattern) != counter.end())
-        occur += counter[succeedPattern];
-
-    //bool passOriginalPattern = false, passSucceedPattern = false;
-    //for (const auto& it : mapcopy) {
-    //    if (it.first == succeedPattern) {
-    //        occur += it.second;
-    //        passSucceedPattern = true;
-    //    }
-    //    else if (it.first == originalPattern) {
-    //        occur += it.second;
-    //        passOriginalPattern = true;
-    //    }
-    //    if ( passOriginalPattern && passSucceedPattern ) break;
-    //}
+    bool passOriginalPattern = false, passSucceedPattern = false;
+    for (const auto& it : mapcopy) {
+        if (it.first == succeedPattern) {
+            occur += it.second;
+            passSucceedPattern = true;
+        }
+        else if (it.first == originalPattern) {
+            occur += it.second;
+            passOriginalPattern = true;
+        }
+        if ( passOriginalPattern && passSucceedPattern ) break;
+    }
     return occur/nCurrent;
 }
 
@@ -746,6 +741,7 @@ void DSMGA2::sortMasks( const Chromosome& ch, list<int>& mask,
                         vector< pair< list<int>, double > >& sortedMasks) {
 
     sortedMasks.clear();
+    sortedMasks.shrink_to_fit();
 
     while (mask.size() > 0) {
         double RMscore = clusterScore(mask);
