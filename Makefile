@@ -4,7 +4,6 @@ CXX = g++
 CXXFLAGS = -O2 -Wall -march=native -std=c++11
 INCLUDE = 
 TLIB = -lm
-
 #-----Suffix Rules---------------------------
 # set up C++ suffixes and relationship between .cc and .o files
 

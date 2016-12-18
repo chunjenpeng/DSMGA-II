@@ -84,7 +84,8 @@ double Chromosome::getFitness () {
         return fitness;
     else {
         fitness = evaluate();
-        if (!hit && fitness > getMaxFitness()) {
+        //if (!hit && fitness > getMaxFitness()) {
+        if (!hit && fitness > getMaxFitness() - EPSILON) {
             hit = true;
             hitnfe = nfe+lsnfe;
         }
@@ -361,7 +362,7 @@ bool Chromosome::tryFlipping(int index) {
 
     //2016-10-21
     //if (getFitness() <= oldF) {
-    if (getFitness() - EPSILON <= oldF) {
+    if (getFitness() - EPSILON < oldF) {
         flip(index);
         evaluated = true;
         fitness = oldF;

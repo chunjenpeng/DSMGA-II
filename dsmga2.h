@@ -8,6 +8,7 @@
 #ifndef _DSMGA2_H_
 #define _DSMGA2_H_
 
+#include <utility>
 #include <list>
 #include <map>
 #include "chromosome.h"
@@ -17,12 +18,13 @@
 #include "fastcounting.h"
 
 class DSMGA2 {
+
 public:
     DSMGA2 (int n_ell, int n_nInitial, int n_maxGen, int n_maxFe, int fffff);
-
     ~DSMGA2 ();
 
     void selection ();
+
     /** tournament selection without replacement*/
     void tournamentSelection();
 
@@ -46,13 +48,14 @@ public:
         return generation;
     }
 
+
     bool isInP(const Chromosome& ) const;
     void genOrderN();
     void genOrderELL();
 
     void showStatistics ();
-
     bool isSteadyState ();
+
 
 //protected:
 public:
@@ -77,6 +80,7 @@ public:
     Chromosome* population;
     FastCounting* fastCounting;
 
+
     TriMatrix<double> graph;
     TriMatrix<double> graph_size;
     double previousFitnessMean;
@@ -84,10 +88,7 @@ public:
 
     // methods
     double computeMI(double, double, double, double) const;
-
-
     void findClique(int startNode, list<int>& result);
-
     void buildFastCounting();
     int countXOR(int, int) const;
     int countOne(int) const;
@@ -95,18 +96,35 @@ public:
     size_t findSize(Chromosome&, list<int>&) const;
     size_t findSize(Chromosome&, list<int>&, Chromosome&) const;
 
-    void printPopulation() const;
-    void populationMaskStatus( const Chromosome&, const list<int>& );
-    bool matchPattern(Chromosome& source, list<int>& mask, Chromosome& des);
-    
+    //2016-11-11
+    void printPopulation(void) const;
+    void printMaskScore( const pair< list<int>, double >& );
+    void printMask( const list<int> & );
+    void populationMaskStatus( const list<int>& );
+
+    void sortMasks(const Chromosome&, list<int>&, vector< pair< list<int>, double > >&);
+    double clusterScore( const Chromosome&, const list<int>& );
+    double BMestimation( const Chromosome&, const list<int>& );
+    void generateRestMask( const list<int> &, vector<int> & );
+    double averageEdge( const list<int>& );
+    double DaviesBouldin_index( const Chromosome&, const list<int>& );
+    double Dunn_index( const list<int>& );
+    double silhouette_coefficient( const list<int>& );
+    double DMC(double, double, double, double);
+
+    bool converged();
+    double lastMax, lastMean, lastMin;
+    int convergeCount;
+
     //2016-12-06
     int RM_succeed, RM_failed, BM_succeed, BM_failed;
+    void populationMaskStatus( const Chromosome&, const list<int>& );
+    bool matchPattern(Chromosome& source, list<int>& mask, Chromosome& des);
+
     map<string, int> succeedPattern, failedPattern;
     void printMapOrder(map<string, int>& m);
     void countSucceed(list<int>& mask, Chromosome& des, bool evaluated);
     void countFailed(list<int>& mask, Chromosome& des, bool evaluated);
-
 };
-
 
 #endif /* _DSMGA2_H_ */

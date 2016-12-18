@@ -73,7 +73,7 @@ void loadNKWAProblem(FILE *f, NKWAProblem *problem) {
     }
 
 #ifdef DEBUG
-
+/*
     for (int i=0; i<problem->n; i++) {
         printf("-> position:        %u\n",i);
         printf("   num_subproblems: %u\n",problem->num_subproblems[i]);
@@ -83,6 +83,7 @@ void loadNKWAProblem(FILE *f, NKWAProblem *problem) {
         printf("\n");
     }
     getchar();
+*/
 #endif
 
     //  fscanf(f,"\n");
