@@ -30,12 +30,14 @@ public:
     int doIt (bool output = true);
 
     void buildGraph ();
+    void buildGraph_sizecheck();
     void mixing ();
     void restrictedMixing(Chromosome&);
     bool restrictedMixing(Chromosome& ch, list<int>& mask);
     void backMixing(Chromosome& source, list<int>& mask, Chromosome& des);
     void backMixingE(Chromosome& source, list<int>& mask, Chromosome& des);
-
+    void findMask(Chromosome& ch, list<int>& mask,int startNode);
+    void findMask_size(Chromosome& ch, list<int>& mask,int startNode);
     bool shouldTerminate ();
 
     bool foundOptima ();
@@ -76,7 +78,7 @@ public:
     FastCounting* fastCounting;
 
     TriMatrix<double> graph;
-
+    TriMatrix<double> graph_size;
     double previousFitnessMean;
     Statistics stFitness;
 

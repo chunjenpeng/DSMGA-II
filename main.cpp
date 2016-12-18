@@ -83,14 +83,14 @@ main (int argc, char *argv[]) {
 
 
     for (i = 0; i < repeat; i++) {
-
+        
         DSMGA2 ga (ell, nInitial, maxGen, maxFe, fffff);
 
         if (display == 1)
             usedGen = ga.doIt (true);
         else
             usedGen = ga.doIt (false);
-
+        cout<<"hi"<<endl;
 
         if (!ga.foundOptima()) {
             failNum++;
