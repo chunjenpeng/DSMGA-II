@@ -232,7 +232,7 @@ int DSMGA2::countXOR(int x, int y) const {
 }
 
 void DSMGA2::printPopulation() const {
-    cout << "population:" << endl;
+    cout << "population: " << nCurrent << endl;
     for (int i = 0; i < nCurrent; ++i){
         //cout << setw(20) << " ";
         for (int j = 0; j < ell; ++j){
@@ -312,7 +312,7 @@ void DSMGA2::printPattern(const map<int, int>& pattern) {
         else
             cout << "."; 
     }
-    cout << endl;
+    //cout << endl;
 }
     
 bool DSMGA2::contradictPattern( const map<int, int>& pattern1, 
@@ -386,7 +386,7 @@ double DSMGA2::BMestimation( map<int, int>& pattern ) {
 }
 
 void DSMGA2::mergeMasks() {
-    
+
     for (auto& score_pattern : patternList ) { 
        score_pattern.first = BMestimation(score_pattern.second); 
     }
@@ -399,10 +399,10 @@ void DSMGA2::mergeMasks() {
                 return lhs.first > rhs.first;
     });
 
-    printf("Original Patterns:%lu\n", patternList.size());
+    printf("\nOriginal Patterns:%lu\n", patternList.size());
     for (const auto& score_pattern : patternList) {
-        printf("%.6f        : ", score_pattern.first);
         printPattern( score_pattern.second );
+        printf(": %.6f\n", score_pattern.first);
     }
     cin.sync();
     cin.get();
@@ -433,15 +433,15 @@ void DSMGA2::mergeMasks() {
                 return lhs.first > rhs.first;
     });
 
-    /*
+    //*
     printf("New Patterns:%lu\n", patternList.size());
     for (const auto& score_pattern : patternList) {
-        printf("%.6f : ", score_pattern.first);
         printPattern( score_pattern.second );
+        printf(": %.6f\n", score_pattern.first);
     }
     cin.sync();
     cin.get();
-    */
+    //*/
 }
 
 void DSMGA2::restrictedMixing(Chromosome& ch) {
@@ -530,6 +530,134 @@ void DSMGA2::backMixing(Chromosome& source, list<int>& mask, Chromosome& des) {
     countFailed(mask, des, evaluated);
 }
 
+void DSMGA2::backMixingO(const map<int, int>& pattern) {
+
+    vector<int> nextGen;
+
+    for (int n=0; n<nCurrent; ++n){
+
+        Chromosome& des = population[n];
+        Chromosome trial(ell);
+        trial = des;
+
+        for( const auto& pos_allel : pattern )
+            trial.setVal( pos_allel.first, pos_allel.second );
+
+        if (isInP(trial)) {
+            for(int i = 0; i < trial.getLength(); i++)
+                cout << trial.getVal(i);
+            cout << " : isInP" << endl;
+            continue;
+        }
+         
+        bool evaluated = trial.isEvaluated();
+
+        //if (trial.getFitness() > des.getFitness()) {
+        if (trial.getFitness() > des.getFitness() - EPSILON) {
+            if (!evaluated) ++BM_succeed;
+            //#ifdef DEBUG
+            for(int i = 0; i < des.getLength(); i++)
+                cout << des.getVal(i);
+            printf(" : before F:  %.6f\n", des.getFitness());
+            
+            for(int i = 0; i < trial.getLength(); i++)
+                cout << trial.getVal(i);
+            printf(" : after  F:  %.6f\n", trial.getFitness());
+            
+            //it = patternList.erase(it);
+            //cout << "erasing..." << endl;
+            //patternList.push_front( make_pair(score, pattern) );
+            //cout << "push_front..." << endl;
+            cin.sync();
+            cin.get();
+            //#endif
+
+            pHash.erase(des.getKey());
+            pHash[trial.getKey()] = trial.getFitness();
+
+            des = trial;
+            if (Chromosome::hit) return;
+        }
+        if (!evaluated) ++BM_failed;
+        nextGen.push_back(n);
+    }
+
+    merge( historyPattern, pattern );
+    int known_length = (int)historyPattern.size();
+    int supply = 4;
+    int nextGenSize = nextGen.size();
+    if (known_length >= ell - 2) {
+        Chromosome converged;
+        converged.initPattern(ell, historyPattern);
+        converged.getFitness();
+        known_length = 0; 
+        historyPattern.clear();
+        nCurrent = (int)ceil( 4.0 * log2( ell - known_length ) );
+    }
+    else {
+        supply = (int)ceil( 4.0 * log2( ell - known_length ) );
+        nextGenSize = (nextGenSize > supply) ? nextGenSize : supply;    
+        nCurrent = ( nextGenSize < nCurrent ) ? nextGenSize : nCurrent;
+    }
+
+    printf("pattern size:%zu, supply:%d\n", pattern.size(), supply);
+    printf("Survived Chromosomes:%zu\n", nextGen.size());
+    printPattern(pattern);
+    cout << endl;
+    for( size_t i = 0; i < nextGen.size(); ++i )
+        population[ nextGen[i] ].print();
+    
+
+
+    newPopulation = new Chromosome[nCurrent];
+    pHash.clear();
+    newPopulation[0].initPattern(ell, historyPattern);
+    newPopulation[0].GHC(pattern);
+    for( int i = 1; i < nCurrent; ++i ) {
+        if ( i < (int)nextGen.size() ) {
+            newPopulation[i] = population[ nextGen[i-1] ]; 
+        }
+        else {
+            //for( int repeat = 0; repeat < supply; ++repeat) {
+                newPopulation[i].initPattern(ell, pattern);
+                newPopulation[i].GHC(pattern);
+                
+                //while( isInP(newPopulation[i]) ) { 
+                //    newPopulation[i] = population[orderN[i]];
+                //}
+            //}
+            //newPopulation[i].print();
+        }
+        double f = newPopulation[i].getFitness();
+        pHash[newPopulation[i].getKey()] = f;
+        if (Chromosome::hit){
+            population[0] = newPopulation[i];
+            delete [] newPopulation;
+            return;
+        }
+    }
+
+
+    delete []selectionIndex;
+    delete []orderN;
+    delete []population;
+
+    selectionIndex = new int[nCurrent];
+    orderN = new int[nCurrent];
+    population = newPopulation;
+    for (int i = 0; i < ell; i++)
+        fastCounting[i].init(nCurrent);
+
+    cout << "historyPattern: " << known_length << ", supply:" << supply << endl;
+    printPattern(historyPattern);
+    cout << endl <<"nCurrent: " << nCurrent << endl;
+    printPopulation();
+      
+    cin.sync();
+    cin.get();
+}
+
+
 void DSMGA2::backMixingO(Chromosome& des) {
     //int n = mergedPatterns.size();
     //int *orderO = new int[n];  
@@ -538,14 +666,17 @@ void DSMGA2::backMixingO(Chromosome& des) {
     for (auto it = patternList.begin(); it != patternList.end(); ++it) {
         double& score = it-> first;
         map<int, int>& pattern = it->second;
-        //printf("%.6f    Try : ", score);
-        //printPattern( pattern );
 
         Chromosome trial(ell);
         trial = des;
 
         for( const auto& pos_allel : pattern )
             trial.setVal( pos_allel.first, pos_allel.second );
+
+        if (isInP(trial)) break;
+
+        printPattern( pattern );
+        printf(": Try %.6f\n", score);
          
         bool evaluated = trial.isEvaluated();
 
@@ -553,17 +684,15 @@ void DSMGA2::backMixingO(Chromosome& des) {
         if (trial.getFitness() > des.getFitness() - EPSILON) {
             if (!evaluated) ++BM_succeed;
             //#ifdef DEBUG
-            printf("%.6f   mask : ", score);
             printPattern( pattern );
-            printf("%.6f before : ", des.getFitness());
+            printf(": mask score %.6f\n", score);
             for(int i = 0; i < des.getLength(); i++)
                 cout << des.getVal(i);
-            cout << endl;
+            printf(": before F:  %.6f\n", des.getFitness());
             
-            printf("%.6f after  : ", trial.getFitness());
             for(int i = 0; i < trial.getLength(); i++)
                 cout << trial.getVal(i);
-            cout << endl;
+            printf(": after  F:  %.6f\n", trial.getFitness());
             
             //it = patternList.erase(it);
             //cout << "erasing..." << endl;
@@ -744,6 +873,8 @@ size_t DSMGA2::findSize(Chromosome& ch, list<int>& mask, Chromosome& ch2) const 
 
 void DSMGA2::mixing() {
 
+    //printPopulation();
+
     if (SELECTION)
         selection();
 
@@ -754,24 +885,47 @@ void DSMGA2::mixing() {
     for (int i=0; i<ell; ++i)
         findClique(i, masks[i]);
 
-    int repeat = (ell>50)? ell/50: 1;
+    //int repeat = (ell>50)? ell/50: 1;
+    int repeat = 1;
 
     for (int k=0; k<repeat; ++k) {
 
         patternList.clear();
-
+        
         genOrderN();
         for (int i=0; i<nCurrent; ++i) {
             restrictedMixing(population[orderN[i]]);
             if (Chromosome::hit) break;
         }
+        if (Chromosome::hit) break;
 
+
+        cout << "k = " << k << ", mergeMasks" << endl;
         mergeMasks();
 
+        if (patternList.size() == 0) {
+            population[0].initPattern(ell, historyPattern);
+            population[0].GHC(historyPattern);
+            double f = population[0].getFitness();
+            pHash[population[0].getKey()] = f;
+            continue;
+        }
+        //for (auto it = patternList.begin(); it != patternList.end(); ++it) {
+        auto it = patternList.begin();
+        double& score = it-> first;
+        map<int, int>& pattern = it->second;
+
+        printPattern( pattern );
+        printf(": Try %.6f\n", score);
+        
+        backMixingO(pattern);
+
+        /*
         for (int i=0; i<nCurrent; ++i){
             backMixingO( population[i] );
             if (Chromosome::hit) break;
         }
+        */
         if (Chromosome::hit) break;
     }
 }

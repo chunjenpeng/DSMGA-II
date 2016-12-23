@@ -114,6 +114,9 @@ public:
     double BMestimation( map<int, int>& pattern );
     void mergeMasks();
     void backMixingO(Chromosome& des);
+    void backMixingO( const map<int, int>& pattern );
+    map<int, int> historyPattern;
+    Chromosome* newPopulation;
 };
 
 

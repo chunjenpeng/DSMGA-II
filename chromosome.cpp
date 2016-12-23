@@ -79,6 +79,35 @@ void Chromosome::initR (int _length) {
     evaluated = false;
 }
 
+void Chromosome::initPattern (int _length, const map<int, int>& pattern) {
+    length = _length;
+    lengthLong = quotientLong(length)+1;
+
+    if (gene != NULL)
+        delete []gene;
+
+    gene = new unsigned long [lengthLong];
+    gene[lengthLong-1] = 0;
+
+    key = 0;
+    for (int i=0; i<length; ++i) {
+
+        int val;
+        auto it = pattern.find(i);
+
+        if ( it != pattern.end() )
+            val = it->second;
+        else 
+            val = myRand.flip();
+
+        setValF(i, val);
+        if (val == 1)
+            key ^= zKey[i];
+    }
+
+    evaluated = false;
+}
+
 double Chromosome::getFitness () {
     if (evaluated)
         return fitness;
@@ -394,6 +423,22 @@ bool Chromosome::GHC() {
 
     bool flag = false;
     for (int i=0; i<length; ++i) {
+        if (tryFlipping(order[i])) flag = true;
+    }
+
+    delete []order;
+    return flag;
+
+}
+
+bool Chromosome::GHC(const map<int, int>& pattern) {
+
+    int* order = new int [length];
+    myRand.uniformArray(order, length, 0, length-1);
+
+    bool flag = false;
+    for (int i=0; i<length; ++i) {
+        if (pattern.find(order[i]) != pattern.end() ) continue;
         if (tryFlipping(order[i])) flag = true;
     }
 

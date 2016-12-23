@@ -5,6 +5,7 @@
 #ifndef _CHROMOSOME_H
 #define _CHROMOSOME_H
 
+#include <map>
 #include <unordered_map>
 #include "global.h"
 #include "nk-wa.h"
@@ -34,11 +35,21 @@ public:
     bool hasSeen() const;
 
     bool GHC();
+    //2016-12-23
+    bool GHC(const map<int, int>& pattern);
+    
     void steepestDescent();
 
     void init (int _ell);
     void init0 (int _ell);
     void initR (int _ell);
+    //2016-12-23
+    void initPattern (int _ell, const map<int, int>& pattern);
+    void print() {
+        for ( int i = 0; i < length; ++i ) 
+            printf("%d",getVal(i));
+        printf("\n");
+    }
 
     bool tryFlipping (int index);
 
