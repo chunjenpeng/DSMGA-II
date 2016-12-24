@@ -90,7 +90,6 @@ main (int argc, char *argv[]) {
             usedGen = ga.doIt (true);
         else
             usedGen = ga.doIt (false);
-        cout<<"hi"<<endl;
 
         if (!ga.foundOptima()) {
             failNum++;
