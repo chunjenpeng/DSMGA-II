@@ -327,10 +327,7 @@ bool DSMGA2::restrictedMixing(Chromosome& ch) {
 
     EQ = true;
     if (taken) {
-#ifdef DEBUG
-        cout << "\nBefore BM:" << endl;
-        populationMaskStatus(ch, mask);
-#endif
+
         genOrderN();
 
         for (int i=0; i<nCurrent; ++i) {
@@ -345,24 +342,11 @@ bool DSMGA2::restrictedMixing(Chromosome& ch) {
             if (keep)
                 nextGen.push_back(orderN[i]);
         }
+
 #ifdef DEBUG
-        cout << "\nsucceedPattern:" << endl;
-        printMapOrder(succeedPattern);
-        //for (auto const& it : succeedPattern) 
-        //    cout << it.first << ":" << it.second << endl;
-
-        cout << "\nfailedPattern:" << endl;
-        printMapOrder(failedPattern);
-        //for (auto const& it : failedPattern) 
-        //    cout << it.first << ":" << it.second << endl;
-        cout << "\nAfter BM:" << endl;
-        populationMaskStatus(ch, mask);
-
         //Chromosome::nfe = RM_failed + RM_succeed + BM_failed + BM_succeed + nCurrent
         printf("\nRM_succeed:%d, RM failed:%d, BM succeed:%d, BM failed:%d, nfe:%d, lsnfe:%d\n"
             ,RM_succeed, RM_failed, BM_succeed, BM_failed, Chromosome::nfe, Chromosome::lsnfe);
-        cin.sync();
-        cin.get();
 #endif
     }
 
