@@ -31,10 +31,13 @@ public:
 
     void buildGraph ();
     void mixing ();
-    void restrictedMixing(Chromosome&);
+    //void restrictedMixing(Chromosome&);
+    bool restrictedMixing(Chromosome&);
     bool restrictedMixing(Chromosome& ch, list<int>& mask);
-    void backMixing(Chromosome& source, list<int>& mask, Chromosome& des);
-    void backMixingE(Chromosome& source, list<int>& mask, Chromosome& des);
+    //void backMixing(Chromosome& source, list<int>& mask, Chromosome& des);
+    //void backMixingE(Chromosome& source, list<int>& mask, Chromosome& des);
+    bool backMixing(Chromosome& source, list<int>& mask, Chromosome& des);
+    bool backMixingE(Chromosome& source, list<int>& mask, Chromosome& des);
 
     bool shouldTerminate ();
 
@@ -103,6 +106,10 @@ public:
     void printMapOrder(map<string, int>& m);
     void countSucceed(list<int>& mask, Chromosome& des, bool evaluated);
     void countFailed(list<int>& mask, Chromosome& des, bool evaluated);
+
+    vector<int> nextGen;
+    Chromosome* newPopulation;
+    void updatePopulation();
 
 };
 
