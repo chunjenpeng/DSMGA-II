@@ -105,9 +105,51 @@ void DSMGA2::oneRun (bool output) {
 
     if (CACHE)
         Chromosome::cache.clear();
+    
+    if (generation > 0) {
 
-    mixing();
+        //int supply = 4 * log2( ell - historicalPattern.size() );
+        //if( (int)historicalPattern.size() >= ell-2 ) {
+        //    supply = 4; 
+        //    historicalPattern.clear();
+        //}
 
+        int supply = 4 * log2( ell );
+        int genNum = supply - nCurrent;
+        //for( int i = 0; i < genNum; ++i ) {
+        //while( nCurrent < supply ) {
+            supply = 4 * log2( ell - historicalPattern.size() );
+            Chromosome donnor(ell);
+            //if( (int)historicalPattern.size() < ell-2 )
+            //    generateChPattern( donnor, historicalPattern );
+            //else 
+            map<int, int> emptyPattern;
+            generateChPattern( donnor, emptyPattern );
+#ifdef DEBUG
+            cout << "supply : " << supply << endl;
+            donnor.print();
+            cout << " donnor" << endl;
+            cin.sync();
+            cin.get();
+#endif
+            mixing(donnor);
+            //if (Chromosome::hit) break;
+            //updatePopulation(donnor);
+            //pHash[donnor.getKey()] = donnor.getFitness();
+        //}
+    }
+
+    if (!Chromosome::hit) 
+        mixing();
+
+#ifdef DEBUG
+    cout << endl << "generation: " << generation << endl;
+    printPattern( historicalPattern );
+    cout << endl;
+    printPopulation();
+    cin.sync();
+    cin.get();
+#endif
 
     double max = -INF;
     stFitness.reset ();
@@ -130,8 +172,7 @@ void DSMGA2::oneRun (bool output) {
 
 
 bool DSMGA2::shouldTerminate () {
-    bool
-    termination = false;
+    bool termination = false;
 
     if (maxFe != -1) {
         if (Chromosome::nfe > maxFe)
@@ -162,12 +203,12 @@ bool DSMGA2::foundOptima () {
 
 
 void DSMGA2::showStatistics () {
-    #ifdef DEBUG 
+    #ifndef DEBUG 
     printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f \n ",
             generation, stFitness.getMax (), stFitness.getMean (),
             stFitness.getMin ());
     #endif
-    #ifndef DEBUG 
+    #ifdef DEBUG 
     printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f nfe:%d\n",
             generation, stFitness.getMax (), stFitness.getMean (),
             stFitness.getMin (), Chromosome::nfe);
@@ -304,10 +345,7 @@ void DSMGA2::printMapOrder(map<string, int>& m){
 
 
 bool DSMGA2::restrictedMixing(Chromosome& ch) {
-
-    BM_failed = BM_succeed = 0;
-    succeedPattern.clear();
-    failedPattern.clear();
+    BM_s = BM_f = 0;
 
     int r = myRand.uniformInt(0, ell-1);
     
@@ -328,25 +366,104 @@ bool DSMGA2::restrictedMixing(Chromosome& ch) {
     EQ = true;
     if (taken) {
 
+        BM_s = BM_f = 0; 
         genOrderN();
 
         for (int i=0; i<nCurrent; ++i) {
-            //if (!matchPattern(ch, mask, population[orderN[i]])) continue;
+
             bool keep = false;
+
             if (EQ)
                 keep = backMixingE(ch, mask, population[orderN[i]]);
             else
                 keep = backMixing(ch, mask, population[orderN[i]]);
 
             if (Chromosome::hit) break;
-            if (keep)
+
+            if (keep) 
+                nextGen.push_back(orderN[i]);
+        }
+        
+
+        double score = (double)BM_s / BM_s + BM_f;
+        map<int, int> pattern;
+        for( auto it = mask.begin(); it != mask.end(); ++it )
+            pattern[ *it ] = ch.getVal(*it); 
+        if( score > 0.5 )
+            mergePattern(historicalPattern, pattern);
+        BMpatterns.push_back( make_pair( pattern, score ) );
+        
+
+#ifdef DEBUG
+        cout << endl;
+        printPattern( historicalPattern );
+        cout << " : " << score << endl;
+        //Chromosome::nfe = RM_failed + RM_succeed + BM_failed + BM_succeed + nCurrent
+        printf("RM_succeed:%d, RM failed:%d, BM succeed:%d, BM failed:%d, nfe:%d, lsnfe:%d\n"
+            ,RM_succeed, RM_failed, BM_succeed, BM_failed, Chromosome::nfe, Chromosome::lsnfe);
+#endif
+    }
+
+    return taken;
+
+}
+
+bool DSMGA2::restrictedMixing(Chromosome& ch, Chromosome& donnor) {
+    BM_s = BM_f = 0;
+
+    int r = myRand.uniformInt(0, ell-1);
+    
+    list<int> mask = masks[r];
+
+    size_t size = findSize(ch, mask, donnor);
+    
+    if (size > (size_t)ell/2)
+        size = ell/2;
+
+    // prune mask to exactly size
+    while (mask.size() > size)
+        mask.pop_back();
+
+
+    bool taken = restrictedMixing(ch, mask);
+
+    EQ = true;
+    if (taken) {
+
+        genOrderN();
+
+        for (int i=0; i<nCurrent; ++i) {
+
+            bool keep = false;
+
+            if (EQ)
+                keep = backMixingE(ch, mask, population[orderN[i]]);
+            else
+                keep = backMixing(ch, mask, population[orderN[i]]);
+
+            if (Chromosome::hit) break;
+
+            if (keep) 
                 nextGen.push_back(orderN[i]);
         }
 
+        double score = (double)BM_s / BM_s + BM_f;
+        map<int, int> pattern;
+        for( auto it = mask.begin(); it != mask.end(); ++it )
+            pattern[ *it ] = ch.getVal(*it); 
+        if( score > 0.5 )
+            mergePattern(historicalPattern, pattern);
+        BMpatterns.push_back( make_pair( pattern, score ) );
+
 #ifdef DEBUG
+        cout << endl;
+        printPattern( historicalPattern );
+        cout << " : " << score << endl;
         //Chromosome::nfe = RM_failed + RM_succeed + BM_failed + BM_succeed + nCurrent
-        printf("\nRM_succeed:%d, RM failed:%d, BM succeed:%d, BM failed:%d, nfe:%d, lsnfe:%d\n"
+        printf("RM_succeed:%d, RM failed:%d, BM succeed:%d, BM failed:%d, nfe:%d, lsnfe:%d\n"
             ,RM_succeed, RM_failed, BM_succeed, BM_failed, Chromosome::nfe, Chromosome::lsnfe);
+        cin.sync();
+        cin.get();
 #endif
     }
 
@@ -361,21 +478,29 @@ bool DSMGA2::backMixing(Chromosome& source, list<int>& mask, Chromosome& des) {
     for (list<int>::iterator it = mask.begin(); it != mask.end(); ++it)
         trial.setVal(*it, source.getVal(*it));
 
-    if ( trial.getKey() != des.getKey() && isInP(trial) ) return false;
     bool evaluated = trial.isEvaluated();
 
-    if (trial.getFitness() > des.getFitness()) {
+    //if ( !evaluated && isInP(trial) ) {
+    //    pHash.erase(des.getKey());
+    //    return false;
+    //}
 
-        countSucceed(mask, des, evaluated);
+
+    if (trial.getFitness() > des.getFitness()) {
 
         pHash.erase(des.getKey());
         pHash[trial.getKey()] = trial.getFitness();
 
         des = trial;
+        ++BM_succeed;
+        ++BM_s;
         return true;
     }
 
-    countFailed(mask, des, evaluated);
+    if(!evaluated) {
+        ++BM_failed;
+        ++BM_f;
+    }
     return true;
 }
 
@@ -386,18 +511,22 @@ bool DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
     for (list<int>::iterator it = mask.begin(); it != mask.end(); ++it)
         trial.setVal(*it, source.getVal(*it));
 
-    if ( trial.getKey() != des.getKey() && isInP(trial) ) return false;
     bool evaluated = trial.isEvaluated();
 
-    if (trial.getFitness() > des.getFitness()) {
+    //if ( !evaluated && isInP(trial) ) {
+    //   pHash.erase(des.getKey());
+    //   return false;
+    //}
 
-        countSucceed(mask, des, evaluated);
+    if (trial.getFitness() > des.getFitness()) {
 
         pHash.erase(des.getKey());
         pHash[trial.getKey()] = trial.getFitness();
 
         EQ = false;
         des = trial;
+        ++BM_succeed;
+        ++BM_s;
         return true;
     }
 
@@ -405,17 +534,22 @@ bool DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
     if (trial.getFitness() > des.getFitness() - EPSILON) {
     //if (trial.getFitness() >= des.getFitness()) {
     
-        countSucceed(mask, des, evaluated);
-
         pHash.erase(des.getKey());
         pHash[trial.getKey()] = trial.getFitness();
 
         des = trial;
+        if(!evaluated) {
+            ++BM_succeed;
+            ++BM_s;
+        }
         return true;
     }
     
+    if(!evaluated) {
+        ++BM_failed;
+        ++BM_f;
+    }
     return true;
-    countFailed(mask, des, evaluated);
 }
 
 bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
@@ -463,12 +597,10 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
                 cout << *it << "-";
             }
             cout << "\b]\n";
-            for(int i = 0; i < ch.getLength(); i++)
-                cout << ch.getVal(i);
+            ch.print();
             printf(" before : %.6f\n", ch.getFitness());
             
-            for(int i = 0; i < trial.getLength(); i++)
-                cout << trial.getVal(i);
+            trial.print();
             printf(" after  : %.6f\n", trial.getFitness());
             #endif
 
@@ -549,22 +681,23 @@ void DSMGA2::mixing() {
     for (int i=0; i<ell; ++i)
         findClique(i, masks[i]);
 
-    int repeat = (ell>50)? ell/50: 1;
+    //int repeat = (ell>50)? ell/50: 1;
+    //for (int k=0; k<repeat; ++k) {
 
-    for (int k=0; k<repeat; ++k) {
+    bool allRMFailed = false;
+    while( !allRMFailed ) {
+        allRMFailed = true;
 
-        //genOrderN();
-        //for (int i=0; i<nCurrent; ++i) {
         int i = 0;
         while( i < nCurrent ) {
 
             nextGen.clear();
-            //restrictedMixing(population[orderN[i]]);
             bool taken = restrictedMixing(population[i]);
             if (Chromosome::hit) break;
 
             if(taken) {
-                updatePopulation();
+                allRMFailed = false;
+                //updatePopulation();
 #ifdef DEBUG
                 printPopulation();
                 cin.sync();
@@ -575,8 +708,84 @@ void DSMGA2::mixing() {
         }
         if (Chromosome::hit) break;
     }
+}
 
+void DSMGA2::mixing(Chromosome& donnor) {
 
+    if (SELECTION)
+        selection();
+
+    //* really learn model
+    //buildFastCounting();
+    //buildGraph();
+    
+    for (int i=0; i<ell; ++i)
+        findClique(i, masks[i]);
+
+    bool allRMFailed = false;
+    while( !allRMFailed ) {
+        allRMFailed = true;
+
+        int i = 0;
+        while( i < nCurrent ) {
+
+            nextGen.clear();
+            // restrictedMixing by one donnor
+            bool taken = restrictedMixing(population[i], donnor);
+            if (Chromosome::hit) return;
+
+            if(taken) {
+                allRMFailed = false;
+#ifdef DEBUG
+                printPopulation();
+                cin.sync();
+                cin.get();
+#endif
+            }
+            ++i;
+        }
+    }
+     
+    for( auto it = BMpatterns.begin(); it != BMpatterns.end(); ++it ) {
+        map<int, int>& pattern = it->first;
+        Chromosome trial(ell);
+        trial = donnor;
+        for ( const auto& pair : pattern )
+            trial.setVal(pair.first, pair.second);
+        if (trial.getFitness() > donnor.getFitness() )
+            donnor = trial;
+    } 
+    //if( ! isInP(donnor) ) {
+        updatePopulation(donnor);
+    //}
+    
+}
+
+void DSMGA2::mergePattern( map<int, int>& mergePattern, const map<int, int>& pattern ) {
+    for (auto it = pattern.begin(); it != pattern.end(); ++it )
+        mergePattern[it->first] = it->second;
+}
+
+void DSMGA2::printPattern( const map<int, int>& pattern ) {
+    for (int i = 0; i < ell; ++i) {
+        if ( pattern.find(i) == pattern.end() )
+            printf(".");
+        else
+            printf("%d", pattern.at(i) ); 
+    }
+}
+
+void DSMGA2::generateChPattern( Chromosome& ch, map<int, int>& pattern) {
+    ch.initR(ell);
+    
+    genOrderELL(); 
+    for (int i = 0; i < ell; ++i ) {
+        auto it = pattern.find( orderELL[i] );
+        if( it != pattern.end() )
+            ch.setVal( it->first, it->second );
+        else
+            ch.tryFlipping( orderELL[i] );
+    }
 }
 
 void DSMGA2::updatePopulation() {
@@ -601,8 +810,27 @@ void DSMGA2::updatePopulation() {
         fastCounting[i].init(nCurrent);
 }
 
-inline bool DSMGA2::isInP(const Chromosome& ch) const {
+void DSMGA2::updatePopulation(Chromosome& ch) {
+    ++nCurrent;
+    newPopulation = new Chromosome[nCurrent];
+    for (int i = 0; i < nCurrent-1; ++i) 
+        newPopulation[i] = population[i];
+    newPopulation[nCurrent-1] = ch;
+    pHash[ch.getKey()] = ch.getFitness();
 
+    nextGen.clear();
+    delete []orderN;
+    delete []selectionIndex;
+    delete []population;
+    orderN = new int[nCurrent];
+    genOrderN();
+    selectionIndex = new int[nCurrent];
+    population = newPopulation;
+    for (int i = 0; i < ell; i++)
+        fastCounting[i].init(nCurrent);
+}
+
+inline bool DSMGA2::isInP(const Chromosome& ch) const {
     unordered_map<unsigned long, double>::const_iterator it = pHash.find(ch.getKey());
     return (it != pHash.end());
 }

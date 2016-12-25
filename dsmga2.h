@@ -31,6 +31,8 @@ public:
 
     void buildGraph ();
     void mixing ();
+    void mixing (Chromosome& donnor);
+    bool restrictedMixing(Chromosome&, Chromosome& donnor);
     //void restrictedMixing(Chromosome&);
     bool restrictedMixing(Chromosome&);
     bool restrictedMixing(Chromosome& ch, list<int>& mask);
@@ -101,16 +103,22 @@ public:
     bool matchPattern(Chromosome& source, list<int>& mask, Chromosome& des);
     
     //2016-12-06
-    int RM_succeed, RM_failed, BM_succeed, BM_failed;
+    int RM_succeed, RM_failed, BM_succeed, BM_failed, BM_s, BM_f;
     map<string, int> succeedPattern, failedPattern;
     void printMapOrder(map<string, int>& m);
     void countSucceed(list<int>& mask, Chromosome& des, bool evaluated);
     void countFailed(list<int>& mask, Chromosome& des, bool evaluated);
 
+    //2016-12-24
+    map<int, int> historicalPattern;
+    list< pair< map<int, int>, double> > BMpatterns;
     vector<int> nextGen;
     Chromosome* newPopulation;
+    void mergePattern( map<int, int>&, const map<int, int>& );
+    void printPattern( const map<int, int>& );
+    void generateChPattern( Chromosome&, map<int, int>& );
     void updatePopulation();
-
+    void updatePopulation(Chromosome&);
 };
 
 

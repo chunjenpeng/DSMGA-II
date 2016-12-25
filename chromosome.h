@@ -5,6 +5,7 @@
 #ifndef _CHROMOSOME_H
 #define _CHROMOSOME_H
 
+#include <cstdio>
 #include <unordered_map>
 #include "global.h"
 #include "nk-wa.h"
@@ -52,6 +53,11 @@ public:
             return 0;
         else
             return 1;
+    }
+
+    void print() {
+        for ( int i = 0; i < length; ++i )
+            printf("%d", getVal(i) );
     }
 
     void setVal (int index, int val) {
