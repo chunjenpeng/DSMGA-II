@@ -31,7 +31,7 @@ public:
 
     void buildGraph ();
     void mixing ();
-    void mixing (Chromosome& donnor);
+    bool mixing (Chromosome& donnor);
     bool restrictedMixing(Chromosome&, Chromosome& donnor);
     //void restrictedMixing(Chromosome&);
     bool restrictedMixing(Chromosome&);

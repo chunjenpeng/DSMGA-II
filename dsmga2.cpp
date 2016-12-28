@@ -108,31 +108,33 @@ void DSMGA2::oneRun (bool output) {
     
     if (generation > 0) {
 
-        //int supply = 4 * log2( ell - historicalPattern.size() );
-        //if( (int)historicalPattern.size() >= ell-2 ) {
-        //    supply = 4; 
-        //    historicalPattern.clear();
-        //}
+        int supply = 4 * log2( ell - historicalPattern.size() );
+        if( (int)historicalPattern.size() >= ell-2 ) 
+            supply = 4; 
 
-        int supply = 4 * log2( ell );
-        int genNum = supply - nCurrent;
+
+        //int supply = 4 * log2( ell );
+        //int genNum = supply - nCurrent;
         //for( int i = 0; i < genNum; ++i ) {
         //while( nCurrent < supply ) {
-            supply = 4 * log2( ell - historicalPattern.size() );
+            //supply = 4 * log2( ell - historicalPattern.size() );
             Chromosome donnor(ell);
             //if( (int)historicalPattern.size() < ell-2 )
-            //    generateChPattern( donnor, historicalPattern );
+            //generateChPattern( donnor, historicalPattern );
             //else 
             map<int, int> emptyPattern;
             generateChPattern( donnor, emptyPattern );
 #ifdef DEBUG
             cout << "supply : " << supply << endl;
             donnor.print();
-            cout << " donnor" << endl;
+            cout << " donnor before BM" << endl;
             cin.sync();
             cin.get();
 #endif
-            mixing(donnor);
+        bool donnorFailed = mixing(donnor);
+        if ( donnorFailed )  {
+            historicalPattern.clear();
+        }
             //if (Chromosome::hit) break;
             //updatePopulation(donnor);
             //pHash[donnor.getKey()] = donnor.getFitness();
@@ -412,6 +414,8 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, Chromosome& donnor) {
     BM_s = BM_f = 0;
 
     int r = myRand.uniformInt(0, ell-1);
+    while ( historicalPattern.find(r) != historicalPattern.end() )
+        r = myRand.uniformInt(0, ell-1);
     
     list<int> mask = masks[r];
 
@@ -423,6 +427,10 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, Chromosome& donnor) {
     // prune mask to exactly size
     while (mask.size() > size)
         mask.pop_back();
+
+    #ifdef DEBUG
+    cout << "\n  RM donnor: " << r <<" \n";
+    #endif
 
 
     bool taken = restrictedMixing(ch, mask);
@@ -480,10 +488,10 @@ bool DSMGA2::backMixing(Chromosome& source, list<int>& mask, Chromosome& des) {
 
     bool evaluated = trial.isEvaluated();
 
-    //if ( !evaluated && isInP(trial) ) {
-    //    pHash.erase(des.getKey());
-    //    return false;
-    //}
+    if ( !evaluated && isInP(trial) ) {
+        pHash.erase(des.getKey());
+        return false;
+    }
 
 
     if (trial.getFitness() > des.getFitness()) {
@@ -513,10 +521,10 @@ bool DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
 
     bool evaluated = trial.isEvaluated();
 
-    //if ( !evaluated && isInP(trial) ) {
-    //   pHash.erase(des.getKey());
-    //   return false;
-    //}
+    if ( !evaluated && isInP(trial) ) {
+       pHash.erase(des.getKey());
+       return false;
+    }
 
     if (trial.getFitness() > des.getFitness()) {
 
@@ -670,7 +678,7 @@ size_t DSMGA2::findSize(Chromosome& ch, list<int>& mask, Chromosome& ch2) const 
 }
 
 void DSMGA2::mixing() {
-
+    
     if (SELECTION)
         selection();
 
@@ -680,13 +688,16 @@ void DSMGA2::mixing() {
 
     for (int i=0; i<ell; ++i)
         findClique(i, masks[i]);
+   
 
     //int repeat = (ell>50)? ell/50: 1;
     //for (int k=0; k<repeat; ++k) {
+    //int repeat = (log2(nCurrent) < 1 ) ? log2(nCurrent) : 2;
+    int repeat = 2;
 
-    bool allRMFailed = false;
-    while( !allRMFailed ) {
-        allRMFailed = true;
+    int allRMFailed = 0;
+    while( allRMFailed < repeat ) {
+        ++allRMFailed;
 
         int i = 0;
         while( i < nCurrent ) {
@@ -696,8 +707,8 @@ void DSMGA2::mixing() {
             if (Chromosome::hit) break;
 
             if(taken) {
-                allRMFailed = false;
-                //updatePopulation();
+                allRMFailed = 0;
+                updatePopulation();
 #ifdef DEBUG
                 printPopulation();
                 cin.sync();
@@ -710,21 +721,34 @@ void DSMGA2::mixing() {
     }
 }
 
-void DSMGA2::mixing(Chromosome& donnor) {
+bool DSMGA2::mixing(Chromosome& donnor) {
+    /*
+    for( auto it = BMpatterns.begin(); it != BMpatterns.end(); ++it ) {
+        map<int, int>& pattern = it->first;
+        Chromosome trial(ell);
+        trial = donnor;
+        for ( const auto& pair : pattern )
+            trial.setVal(pair.first, pair.second);
+        if (trial.getFitness() > donnor.getFitness() )
+            donnor = trial;
+    }*/ 
 
-    if (SELECTION)
-        selection();
+    //if (SELECTION)
+    //    selection();
 
     //* really learn model
     //buildFastCounting();
     //buildGraph();
     
-    for (int i=0; i<ell; ++i)
-        findClique(i, masks[i]);
+    //for (int i=0; i<ell; ++i)
+    //    findClique(i, masks[i]);
 
-    bool allRMFailed = false;
-    while( !allRMFailed ) {
-        allRMFailed = true;
+    bool donnorFailed = true;
+    int allRMFailed = 0;
+    //int repeat = (log2(nCurrent) < 1 ) ? log2(nCurrent) : 2;
+    int repeat = 2;
+    while( allRMFailed < repeat ) {
+        ++allRMFailed;
 
         int i = 0;
         while( i < nCurrent ) {
@@ -732,10 +756,11 @@ void DSMGA2::mixing(Chromosome& donnor) {
             nextGen.clear();
             // restrictedMixing by one donnor
             bool taken = restrictedMixing(population[i], donnor);
-            if (Chromosome::hit) return;
+            if (Chromosome::hit) return false;
 
             if(taken) {
-                allRMFailed = false;
+                donnorFailed = false;
+                allRMFailed = 0;
 #ifdef DEBUG
                 printPopulation();
                 cin.sync();
@@ -752,12 +777,14 @@ void DSMGA2::mixing(Chromosome& donnor) {
         trial = donnor;
         for ( const auto& pair : pattern )
             trial.setVal(pair.first, pair.second);
-        if (trial.getFitness() > donnor.getFitness() )
+       if (trial.getFitness() > donnor.getFitness() )
             donnor = trial;
     } 
-    //if( ! isInP(donnor) ) {
+    if( ! isInP(donnor) ) {
+        donnorFailed = false;
         updatePopulation(donnor);
-    //}
+    }
+    return donnorFailed;
     
 }
 
