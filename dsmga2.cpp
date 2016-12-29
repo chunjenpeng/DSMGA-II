@@ -640,6 +640,7 @@ void DSMGA2::generateRestMask( const list<int> &mask, vector<int> &rest ){
         if (!inMask[i])
             rest.push_back(i);
     }
+    delete [] inMask;
 }
 
 double DSMGA2::averageEdge( const list<int> &mask ) {
