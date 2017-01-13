@@ -1,6 +1,6 @@
 
 CXX = g++
-#CXXFLAGS = -O0 -g -std=c++11
+#CXXFLAGS = -O0 -Wall -pg -g -std=c++11
 CXXFLAGS = -O2 -Wall -march=native -std=c++11
 INCLUDE = 
 TLIB = -lm
