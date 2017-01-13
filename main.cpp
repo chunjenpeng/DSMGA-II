@@ -20,8 +20,8 @@ int
 main (int argc, char *argv[]) {
 
 
-    if (argc != 9) {
-        printf ("DSMGA2 ell nInitial function maxGen maxFe repeat display rand_seed\n");
+    if (argc != 9 && argc != 10 && argc != 11) {
+        printf ("DSMGA2 ell nInitial function maxGen maxFe repeat display rand_seed (problem) (step)\n");
         printf ("function: \n");
         printf ("     ONEMAX:  0\n");
         printf ("     MK    :  1\n");
@@ -42,13 +42,14 @@ main (int argc, char *argv[]) {
     int repeat = atoi (argv[6]); // how many time to repeat
     int display = atoi (argv[7]); // display each generation or not
     int rand_seed = atoi (argv[8]);  // rand seed
-
+    int problem = (argc > 9) ? atoi(argv[9]) : 1; // problem number
+    int step = (argc > 10) ? atoi(argv[10]) : 1; // problem number
 
     if (fffff == 4) {
 
         char filename[200];
         //sprintf(filename, "./NK_Instance/pnk%d_%d_%d_%d", ell, 4, 1, 1);
-        sprintf(filename, "./NK_Instance/pnk%d_%d_%d_%d", ell, 4, 5, 1);
+        sprintf(filename, "./NK_Instance/pnk%d_%d_%d_%d", ell, 4, step, problem);
 
         if (SHOW_BISECTION) printf("Loading: %s\n", filename);
         FILE *fp = fopen(filename, "r");
@@ -58,14 +59,16 @@ main (int argc, char *argv[]) {
 
     if (fffff == 5) {
         char filename[200];
-        sprintf(filename, "./SPIN/%d/%d_%d",ell, ell, 1);
+        //sprintf(filename, "./SPIN/%d/%d_%d",ell, ell, 1);
+        sprintf(filename, "./SPIN/%d/%d_%d",ell, ell, problem);
         if (SHOW_BISECTION) printf("Loading: %s\n", filename);
         loadSPIN(filename, &mySpinGlassParams);
     }
 
     if (fffff == 6) {
         char filename[200];
-        sprintf(filename, "./SAT/uf%d/uf%d-0%d.cnf", ell, ell, 1);
+        //sprintf(filename, "./SAT/uf%d/uf%d-0%d.cnf", ell, ell, 1);
+        sprintf(filename, "./SAT/uf%d/uf%d-0%d.cnf", ell, ell, problem);
         if (SHOW_BISECTION) printf("Loading: %s\n", filename);
         loadSAT(filename, &mySAT);
     }
