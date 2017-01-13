@@ -102,7 +102,7 @@ public:
     void printMask( const list<int> & );
     void populationMaskStatus( const list<int>& );
 
-    void sortMasks(const Chromosome&, list<int>&, vector< pair< list<int>, double > >&);
+    void sortMasks(const Chromosome&, list<int>&, vector< pair< size_t, double > >&);
     double clusterScore( const Chromosome&, const list<int>& );
     double BMestimation( const Chromosome&, const list<int>& );
     void generateRestMask( const list<int> &, vector<int> & );
@@ -125,6 +125,8 @@ public:
     void printMapOrder(map<string, int>& m);
     void countSucceed(list<int>& mask, Chromosome& des, bool evaluated);
     void countFailed(list<int>& mask, Chromosome& des, bool evaluated);
+    double avg_msize, taken_times;
+    map<int, int> msize;
 };
 
 #endif /* _DSMGA2_H_ */

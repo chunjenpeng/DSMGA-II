@@ -147,7 +147,7 @@ bool DSMGA2::converged() {
     lastMean = stFitness.getMean();
     lastMin = stFitness.getMin();
     
-    return (convergeCount > 100) ? true : false;
+    return (convergeCount > 1e9) ? true : false;
 }
 
 bool DSMGA2::shouldTerminate () {
@@ -171,8 +171,8 @@ bool DSMGA2::shouldTerminate () {
     if (stFitness.getMax() - EPSILON <= stFitness.getMean() )
         termination = true;
 
-    if (converged() )
-        termination = true;
+    //if (converged() )
+    //    termination = true;
 
     return termination;
 
@@ -191,9 +191,9 @@ void DSMGA2::showStatistics () {
             stFitness.getMin ());
     #endif
     #ifndef DEBUG 
-    printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f nfe:%d\n",
+    printf ("Gen:%d  Fitness:(Max/Mean/Min):%f/%f/%f nfe:%d avg_msize:%f\n",
             generation, stFitness.getMax (), stFitness.getMean (),
-            stFitness.getMin (), Chromosome::nfe);
+            stFitness.getMin (), Chromosome::nfe, avg_msize/taken_times);
     printf("lsnfe:%d, nfe:%d, RM failed:%d, RM success:%d, BM failed:%d, BM success:%d\n"
         ,Chromosome::lsnfe, Chromosome::nfe, RM_failed, RM_succeed, BM_failed, BM_succeed );
     #endif
@@ -334,14 +334,20 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
     findMask(ch, mask,startNode);
     
     size_t size = findSize(ch, mask);
+
     list<int> mask_size;
     
     findMask_size(ch,mask_size,startNode);
     size_t size_original = findSize(ch,mask_size);
+    
     if (size > size_original)
       size = size_original;
-    //if (size > (size_t)ell/2)
-     //   size = ell/2;
+    /*printMask(mask);
+    cout << "\nsize: " << size << endl;
+    cout << "size_original: " << size_original << endl;
+    cin.get();
+    cin.sync();
+    */
 
     // prune mask to exactly size
     while (mask.size() > size)
@@ -354,6 +360,9 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
         cout << "\nBefore BM:" << endl;
         populationMaskStatus(ch, mask);
 #endif
+        avg_msize += mask.size();
+        taken_times++;
+
         genOrderN();
 
         for (int i=0; i<nCurrent; ++i) {
@@ -450,13 +459,14 @@ void DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
 bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
 
     bool taken = false;
-    list<int> sMask;
-    vector< pair< list<int>, double > > sortedMasks; 
+    list<int> sMask = mask;
+    vector< pair< size_t, double > > sortedMasks; 
 
     //2016-11-11 
-    sortMasks( ch, mask, sortedMasks );
-    for( pair< list<int>, double > p : sortedMasks ){
-        sMask = p.first;
+    sortMasks( ch, sMask, sortedMasks );
+    for( pair< size_t, double > p : sortedMasks ){
+        sMask.clear();
+        sMask = list<int>( mask.begin(), next(mask.begin(), p.first) );
         
         Chromosome trial(ell);
         trial = ch;
@@ -467,7 +477,8 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
     
         #ifdef DEBUG
         cout << " Try Mask:";
-        printMaskScore(p);
+        printMask(sMask);
+        cout << endl;
         #endif
         if (isInP(trial)){
             #ifdef DEBUG
@@ -483,21 +494,19 @@ bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
         ++RM_failed;
         if (trial.getFitness() > ch.getFitness() - EPSILON) {
             #ifdef DEBUG 
-            for (auto it = sortedMasks.begin(); it != sortedMasks.end(); ++it )
-                printMaskScore( *it );
-                cout << "\nTaken Mask:";
-                printMask(sMask);
-                cout << endl;
+            cout << "\nTaken Mask:";
+            printMask(sMask);
+            cout << endl; 
 
-                printf("%11.6f before : ", ch.getFitness());
-                for(int i = 0; i < ch.getLength(); i++)
-                    cout << ch.getVal(i);
-                cout << endl;
+            printf("%11.6f before : ", ch.getFitness());
+            for(int i = 0; i < ch.getLength(); i++)
+                cout << ch.getVal(i);
+            cout << endl;
     
-                printf("%11.6f after  : ", trial.getFitness());
-                for(int i = 0; i < trial.getLength(); i++)
-                    cout << trial.getVal(i);
-                cout << endl;
+            printf("%11.6f after  : ", trial.getFitness());
+            for(int i = 0; i < trial.getLength(); i++)
+                cout << trial.getVal(i);
+            cout << endl;
             #endif
 
                 --RM_failed;
@@ -759,11 +768,19 @@ double DSMGA2::clusterScore( const Chromosome& ch, const list<int> &mask ) {
     //return silhouette_coefficient( mask );
 }
 
-void DSMGA2::sortMasks( const Chromosome& ch, list<int>& mask, 
-                        vector< pair< list<int>, double > >& sortedMasks) {
+bool compare( const pair<size_t, double>& left, const pair<size_t, double>& right) {
+    if (fabs(left.second-right.second)<EPSILON) // float equal comparison
+        return left.first < right.first; // favor small mask when tie
+    else
+        return left.second > right.second; // favor small DB index
+}
 
+void DSMGA2::sortMasks( const Chromosome& ch, list<int>& mask, 
+                        vector< pair< size_t, double > >& sortedMasks) {
+    list<int> oriMask = mask; 
+    list< pair<size_t, double> > l;
     sortedMasks.clear();
-    sortedMasks.shrink_to_fit();
+    
 
     while (mask.size() > 0) {
         double RMscore = clusterScore( ch, mask );
@@ -779,21 +796,60 @@ void DSMGA2::sortMasks( const Chromosome& ch, list<int>& mask,
         cout << endl;
 #endif
 
-        sortedMasks.push_back( make_pair(mask, score) );
+        l.push_back( make_pair(mask.size(), score) );
         mask.pop_back();
     }
 
-    sort( sortedMasks.begin(), sortedMasks.end(),
-        [](const pair< list<int>,double > &left, const pair< list<int>,double > &right){
+    l.sort( compare );
+#ifdef DEBUG
+    for( auto p : l) {
+        printf("%.6f : ", p.second);
+        printMask(list<int>( oriMask.begin(), next(oriMask.begin(), p.first) ));
+        printf("\n");
+    }
+    printf("\n\n");
+#endif
+    /*
+    sort( l.begin(), l.end(),
+        [](const pair< size_t,double > &left, const pair< size_t,double > &right){
             if (fabs(left.second-right.second)<EPSILON) // float equal comparison
-                return left.first.size() < right.first.size(); // favor small mask when tie
+                return left.first < right.first; // favor small mask when tie
             else
                 return left.second > right.second; // favor small DB index
-        });
+        }); */
+
+    while( !l.empty() ) {
+        auto it = l.begin(); 
+        size_t current = it->first;
+        size_t half_size = (it->first-1)/2;
+        ++it;
+        while( half_size > sortedMasks.size() && half_size > 0 && it!=l.end() ) {
+            if( it->first < current) {
+                sortedMasks.push_back(*it);
+                it = l.erase(it);
+                --half_size;
+            }
+            else
+                ++it;
+        }
+        sortedMasks.push_back(*l.begin());
+        l.pop_front();
+    }
+
+#ifdef DEBUG
+    for( auto p : sortedMasks ) {
+        printf("%.6f : ", p.second);
+        printMask(list<int>( oriMask.begin(), next(oriMask.begin(), p.first) ));
+        printf("\n");
+    }
+#endif
     
 }
 
 void DSMGA2::mixing() {
+
+    msize.clear();
+    avg_msize = taken_times = 0;
 
     if (SELECTION)
         selection();
