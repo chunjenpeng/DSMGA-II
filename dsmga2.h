@@ -30,7 +30,11 @@ public:
 
     void buildGraph ();
     void mixing ();
-    void findMask(Chromosome& ch, list<int>& mask);
+    // 2016-11-26
+    void findMask(Chromosome& ch, list<int>& mask,int startNode);
+    void findMask_size(Chromosome& ch, list<int>& mask,int startNode);
+    void buildGraph_sizecheck();
+    // ****
     void restrictedMixing(Chromosome&);
     bool restrictedMixing(Chromosome& ch, list<int>& mask);
     void backMixing(Chromosome& source, list<int>& mask, Chromosome& des);
@@ -76,7 +80,8 @@ public:
     FastCounting* fastCounting;
 
     TriMatrix<double> graph;
-
+   // 2016-11-26
+    TriMatrix<double> graph_size;
     double previousFitnessMean;
     Statistics stFitness;
 
@@ -92,7 +97,10 @@ public:
 
     size_t findSize(Chromosome&, list<int>&) const;
     size_t findSize(Chromosome&, list<int>&, Chromosome&) const;
-
+    
+    bool converged();
+    double lastMax, lastMean, lastMin;
+    int convergeCount;
 
 };
 
