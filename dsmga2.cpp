@@ -330,6 +330,8 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
     //2016-03-09
 	list<int> mask;
 	findMask(ch, mask,startNode);
+
+
     size_t size = findSize(ch, mask);
    // supply_2edge += size;
     list<int> mask_size; 
@@ -343,9 +345,43 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
     // prune mask to exactly size
     while (mask.size() > size)
         mask.pop_back();
+    
+   
+    auto it1 = mask.begin();
+    auto it2 = mask_size.begin();
+    size_t s = 0;
+    bool taken = false;
+    Chromosome trial(ell);
+    trial = ch;
+    for( ; it1 != mask.end(); ++it1 ) {
+        if( *it1 != *it2 ) break;
+        trial.flip(*it1);
+        ++s;
+        ++it2;
+    }
+    if (!isInP(trial) && s > 0 && trial.getFitness() > ch.getFitness() - EPSILON) {
+
+        /*
+        cout << "Early hit!" << endl;
+        cout << "s = " << s << endl;
+        cout << "size = " << size << endl;
+        cout << "size_original = " << size_original << endl;
+        cin.sync();
+        cin.get();
+        */
+        pHash.erase(ch.getKey());
+        pHash[trial.getKey()] = trial.getFitness();
+        taken = true;
+        ch = trial;
+    }
+
+    
 
 
-    bool taken = restrictedMixing(ch, mask);
+    if(!taken)
+        taken = restrictedMixing(ch, mask, s);
+    //bool taken = restrictedMixing(ch, mask);
+    
     //2016-10-22 
     if (!taken) rm_fail++; 
         
@@ -389,7 +425,6 @@ void DSMGA2::restrictedMixing(Chromosome& ch) {
 }
 void DSMGA2::findMask_size(Chromosome& ch, list<int>& result,int startNode){
     result.clear();
-
     
 	DLLA rest(ell);
 
@@ -497,12 +532,15 @@ void DSMGA2::backMixingE(Chromosome& source, list<int>& mask, Chromosome& des) {
 
 }
 
-bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
+//bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask) {
+bool DSMGA2::restrictedMixing(Chromosome& ch, list<int>& mask, const size_t& tried_size) {
 
     bool taken = false;
     size_t lastUB = 0;
 
     for (size_t ub = 1; ub <= mask.size(); ++ub) {
+
+        if( ub == tried_size) continue;
 
         size_t size = 1;
         Chromosome trial(ell);

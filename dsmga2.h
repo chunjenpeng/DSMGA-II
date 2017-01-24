@@ -36,7 +36,8 @@ public:
     void buildGraph_sizecheck();
     // ****
     void restrictedMixing(Chromosome&);
-    bool restrictedMixing(Chromosome& ch, list<int>& mask);
+    //bool restrictedMixing(Chromosome& ch, list<int>& mask);
+    bool restrictedMixing(Chromosome& ch, list<int>& mask, const size_t& );
     void backMixing(Chromosome& source, list<int>& mask, Chromosome& des);
     void backMixingE(Chromosome& source, list<int>& mask, Chromosome& des);
 

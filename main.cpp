@@ -46,7 +46,7 @@ main (int argc, char *argv[]) {
 
         char filename[200];
         //sprintf(filename, "./NK_Instance/pnk%d_%d_%d_%d", ell, 4, 1, 1);
-        sprintf(filename, "./NK_Instance/pnk%d_%d_%d_%d", ell, 4, 5, 1);
+        sprintf(filename, "./NK_Instance/pnk%d_%d_%d_%d", ell, 4, 3, 1);
 
         if (SHOW_BISECTION) printf("Loading: %s\n", filename);
         FILE *fp = fopen(filename, "r");
